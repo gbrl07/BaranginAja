@@ -1,0 +1,118 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                      String   @id @default(uuid())
+  nama_lengkap            String
+  email                   String   @unique
+  password_hash           String
+  no_hp                   String?
+  kampus_id               String?
+  kampus                  Campus?  @relation(fields: [kampus_id], references: [id])
+  alamat_kos              String?
+  lat                     Float?
+  lng                     Float?
+  status_verifikasi       String   @default("PENDING") // "PENDING" | "VERIFIED"
+  is_seller               Boolean  @default(false)
+  no_rekening             String?
+  nama_bank               String?
+  nama_pemilik_rekening   String?
+  role                    String   @default("BUYER") // "BUYER" | "SELLER" | "ADMIN"
+  created_at              DateTime @default(now())
+
+  // Relations
+  products                Product[]  @relation("SellerProducts")
+  ordersAsBuyer           Order[]    @relation("BuyerOrders")
+  ordersAsAdmin           Order[]    @relation("AdminOrders")
+  payoutsAsSeller         Payout[]   @relation("SellerPayouts")
+  payoutsAsAdmin          Payout[]   @relation("AdminPayouts")
+  activities              ActivityLog[] @relation("AdminActivities")
+}
+
+model Campus {
+  id          String   @id @default(uuid())
+  nama_kampus String
+  kota        String   @default("Surabaya")
+  aktif       Boolean  @default(true)
+  users       User[]
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  nama_kategori String
+  products      Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  seller_id   String
+  seller      User     @relation("SellerProducts", fields: [seller_id], references: [id])
+  kategori_id String
+  kategori    Category @relation(fields: [kategori_id], references: [id])
+  nama_barang String
+  deskripsi   String
+  kondisi     String   // "Seperti Baru" | "Baik" | "Cukup Baik"
+  harga_input Int
+  harga_jual  Int
+  berat_kg    Float
+  foto_urls   String   // JSON string array
+  lat         Float?
+  lng         Float?
+  status      String   @default("TERSEDIA") // "TERSEDIA" | "DIPESAN" | "TERJUAL"
+  created_at  DateTime @default(now())
+
+  orders      Order[]
+}
+
+model Order {
+  id                       String   @id @default(uuid())
+  product_id               String
+  product                  Product  @relation(fields: [product_id], references: [id])
+  buyer_id                 String
+  buyer                    User     @relation("BuyerOrders", fields: [buyer_id], references: [id])
+  opsi_pengiriman          String   // "COD" | "KURIR"
+  jarak_km                 Float?
+  ongkir                   Int?
+  total_harga              Int
+  status                   String   @default("MENUNGGU_PEMBAYARAN") // "MENUNGGU_PEMBAYARAN" | "DIBAYAR" | "DIJEMPUT_KURIR" | "DALAM_PENGIRIMAN" | "DITERIMA_PEMBELI" | "SELESAI" | "DIBATALKAN"
+  bukti_bayar_url          String?
+  hold_expires_at          DateTime?
+  dikonfirmasi_diterima_at DateTime?
+  admin_id                 String?
+  admin                    User?    @relation("AdminOrders", fields: [admin_id], references: [id])
+  created_at               DateTime @default(now())
+  paid_at                  DateTime?
+  completed_at             DateTime?
+
+  payouts                  Payout[]
+  activities               ActivityLog[]
+}
+
+model Payout {
+  id                String   @id @default(uuid())
+  order_id          String
+  order             Order    @relation(fields: [order_id], references: [id])
+  seller_id         String
+  seller            User     @relation("SellerPayouts", fields: [seller_id], references: [id])
+  nominal           Int
+  status            String   @default("MENUNGGU_PENCAIRAN") // "MENUNGGU_PENCAIRAN" | "DICAIRKAN"
+  tanggal_dicairkan DateTime?
+  admin_id          String?
+  admin             User?    @relation("AdminPayouts", fields: [admin_id], references: [id])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  admin_id    String
+  admin       User     @relation("AdminActivities", fields: [admin_id], references: [id])
+  order_id    String?
+  order       Order?   @relation(fields: [order_id], references: [id])
+  aksi        String
+  timestamp   DateTime @default(now())
+}
