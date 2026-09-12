@@ -19,6 +19,11 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: 'BaranginAja - Platform E-Commerce Barang Bekas Mahasiswa',
   description: 'Jual beli barang bekas mahasiswa berkualitas, ramah kantong, dan hemat untuk kebutuhan kos dan kuliah.',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

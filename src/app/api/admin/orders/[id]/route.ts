@@ -37,6 +37,12 @@ export async function PUT(
         where: { id: order.product_id },
         data: { status: 'TERJUAL' }
       });
+    } else if (status === 'DIBATALKAN') {
+      // Revert product status back to TERSEDIA
+      await prisma.product.update({
+        where: { id: order.product_id },
+        data: { status: 'TERSEDIA' }
+      });
     }
 
     if (status === 'SELESAI') {

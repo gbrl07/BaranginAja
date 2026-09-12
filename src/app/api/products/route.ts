@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getSession } from '@/lib/auth';
+import { expireHoldOrders } from '@/lib/orderCleanup';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,9 @@ function calculateMarkup(harga_input: number): number {
 
 export async function GET(req: Request) {
   try {
+    // Otomatis bersihkan order hold yang sudah expired
+    await expireHoldOrders();
+
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('category');
     const search = searchParams.get('search');

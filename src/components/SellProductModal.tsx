@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -41,9 +41,30 @@ export default function SellProductModal({ onProductCreated }: { onProductCreate
   const [berat_kg, setBeratKg] = useState('');
   const [foto_url, setFotoUrl] = useState('');
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setError('Ukuran file foto terlalu besar (Maksimal 8MB)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFotoUrl(event.target.result as string);
+        setError('');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -226,18 +247,35 @@ export default function SellProductModal({ onProductCreated }: { onProductCreate
                       )}
                     </div>
 
-                    {/* Image URL & Presets Selection */}
+                    {/* Image URL, File Upload & Presets Selection */}
                     <div className="flex-1 space-y-2.5 w-full">
-                      <input
-                        type="url"
-                        value={foto_url}
-                        onChange={(e) => setFotoUrl(e.target.value)}
-                        placeholder="Tempelkan URL Gambar (atau pilih contoh di bawah)"
-                        className="w-full p-3 bg-[#F5F5F3] hover:bg-[#EFEFEA] focus:bg-white border border-[#EAE7DF] rounded-xl text-xs font-semibold text-[#0C1D32] focus:outline-none focus:ring-1 focus:ring-[#0C1D32] transition-all"
-                      />
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={foto_url}
+                          onChange={(e) => setFotoUrl(e.target.value)}
+                          placeholder="Tempelkan URL Gambar atau upload foto dari perangkat"
+                          className="flex-1 p-3 bg-[#F5F5F3] hover:bg-[#EFEFEA] focus:bg-white border border-[#EAE7DF] rounded-xl text-xs font-semibold text-[#0C1D32] focus:outline-none focus:ring-1 focus:ring-[#0C1D32] transition-all"
+                        />
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-3.5 py-2.5 bg-[#007AAD] hover:bg-[#005C82] text-white text-[11px] font-extrabold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload File</span>
+                        </button>
+                      </div>
                       
                       <div>
-                        <span className="text-[10px] text-gray font-bold uppercase tracking-wider block mb-1.5">Pilih Foto Contoh Cepat:</span>
+                        <span className="text-[10px] text-gray font-bold uppercase tracking-wider block mb-1.5">Atau Pilih Foto Contoh Cepat:</span>
                         <div className="flex flex-wrap gap-1.5">
                           {MOCK_PRESET_IMAGES.map((preset, idx) => (
                             <button

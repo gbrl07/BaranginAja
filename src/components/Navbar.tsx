@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -156,8 +157,8 @@ function NavbarContent() {
         
         {/* Brand Logo - Left */}
         <Link href="/" className="flex items-center gap-3 shrink-0 group">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary transition-transform group-hover:rotate-12">
-            <Leaf className="w-7 h-7 fill-primary" />
+          <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-105">
+            <Image src="/logo.png" alt="BaranginAja Logo" width={32} height={32} className="object-contain w-full h-full" />
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-black text-base-dark tracking-widest uppercase">
