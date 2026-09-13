@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { calculateDistanceKm, calculateOngkirRupiah } from '@/lib/distance';
+import { expireHoldOrders } from '@/lib/orderCleanup';
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,9 @@ export async function POST(req: Request) {
   try {
     const session = await requireAuth();
     
+    // Otomatis bersihkan order hold yang sudah lewat batas waktu (30 menit)
+    await expireHoldOrders();
+
     const { product_id, opsi_pengiriman } = await req.json();
 
     if (!product_id || !opsi_pengiriman) {
@@ -46,8 +50,8 @@ export async function POST(req: Request) {
 
     const total_harga = product.harga_jual + ongkir;
 
-    // Lock the product for 30 mins
-    const hold_expires_at = new Date(Date.now() + 30 * 60000);
+    // Lock the product for 5 mins
+    const hold_expires_at = new Date(Date.now() + 5 * 60000);
 
     // Update status produk
     await prisma.product.update({

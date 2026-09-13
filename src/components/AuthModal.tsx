@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Building2, ChevronRight, Leaf } from 'lucide-react';
+import { X, Lock, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Building2, ChevronRight } from 'lucide-react';
 import MapLocationPickerModal, { LocationData } from '@/components/MapLocationPickerModal';
 
 
@@ -142,8 +143,8 @@ export default function AuthModal() {
 
             <div className="p-8 md:p-10">
               <div className="flex justify-center mb-8">
-                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-primary">
-                  <Leaf className="w-10 h-10 fill-primary" />
+                 <div className="w-12 h-12 flex items-center justify-center">
+                  <Image src="/logo.png" alt="BaranginAja Logo" width={48} height={48} className="object-contain w-full h-full" />
                 </div>
               </div>
 

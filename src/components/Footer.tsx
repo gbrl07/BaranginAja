@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Leaf, ShieldCheck, Truck, CreditCard, Headphones, Globe, Mail, Phone } from 'lucide-react';
+import { ShieldCheck, Truck, CreditCard, Headphones, Globe, Mail, Phone } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -61,8 +62,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 py-12">
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary">
-                <Leaf className="w-6 h-6 fill-primary" />
+              <div className="w-8 h-8 flex items-center justify-center">
+                <Image src="/logo.png" alt="BaranginAja Logo" width={32} height={32} className="object-contain w-full h-full" />
               </div>
               <span className="text-sm font-black text-base-dark tracking-widest uppercase">Barangin</span>
             </div>

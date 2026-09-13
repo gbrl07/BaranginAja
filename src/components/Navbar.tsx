@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -130,10 +131,12 @@ function NavbarContent() {
           ========================================================================= */}
         <div className="w-full bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-
             {/* 1. KIRI: BRAND LOGO */}
             <div className="flex items-center gap-3 shrink-0">
-              <Link href="/" className="flex items-center group">
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-105">
+                  <Image src="/logo.png" alt="BaranginAja Logo" width={32} height={32} className="object-contain w-full h-full" />
+                </div>
                 <span className="text-[21px] font-normal text-[#1f1f1f] tracking-tight hover:opacity-85 transition-opacity">
                   BaranginAja
                 </span>

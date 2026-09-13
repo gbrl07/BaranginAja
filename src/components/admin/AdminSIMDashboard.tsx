@@ -42,7 +42,8 @@ import {
   Home,
   BarChart3,
   Calendar,
-  Store
+  Store,
+  Eye
 } from 'lucide-react';
 
 interface AdminSIMDashboardProps {
@@ -104,7 +105,72 @@ export default function AdminSIMDashboard({
 
   // Campus Form State
   const [isCampusModalOpen, setIsCampusModalOpen] = useState(false);
-  const [newCampusName, setNewCampusName] = useState('');
+  const [newCampusForm, setNewCampusForm] = useState({ nama_kampus: '', kota: 'Surabaya' });
+  const [isEditCampusModalOpen, setIsEditCampusModalOpen] = useState(false);
+  const [editCampusForm, setEditCampusForm] = useState({ id: '', nama_kampus: '', kota: 'Surabaya', aktif: true });
+  const [campusLoading, setCampusLoading] = useState(false);
+
+  // Campus detail user list modal state
+  const [isCampusDetailModalOpen, setIsCampusDetailModalOpen] = useState(false);
+  const [viewingCampus, setViewingCampus] = useState<any | null>(null);
+  const [campusUserSearchQuery, setCampusUserSearchQuery] = useState('');
+
+  const handleOpenDetailCampus = (c: any) => {
+    setViewingCampus(c);
+    setCampusUserSearchQuery('');
+    setIsCampusDetailModalOpen(true);
+  };
+
+  // User Management State
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'BUYER' | 'SELLER' | 'ADMIN'>('ALL');
+  const [userStatusFilter, setUserStatusFilter] = useState<'ALL' | 'VERIFIED' | 'PENDING'>('ALL');
+
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({
+    nama_lengkap: '',
+    email: '',
+    password: '',
+    no_hp: '',
+    alamat_kos: '',
+    kampus_id: '',
+    role: 'BUYER',
+    status_verifikasi: 'VERIFIED',
+    is_seller: false,
+    nama_bank: '',
+    no_rekening: '',
+    nama_pemilik_rekening: ''
+  });
+  const [createUserLoading, setCreateUserLoading] = useState(false);
+
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editUserForm, setEditUserForm] = useState<any>({
+    userId: '',
+    nama_lengkap: '',
+    email: '',
+    password: '',
+    no_hp: '',
+    alamat_kos: '',
+    kampus_id: '',
+    role: 'BUYER',
+    status_verifikasi: 'VERIFIED',
+    is_seller: false,
+    nama_bank: '',
+    no_rekening: '',
+    nama_pemilik_rekening: ''
+  });
+  const [editUserLoading, setEditUserLoading] = useState(false);
+
+  // User detail view modal state
+  const [isDetailUserModalOpen, setIsDetailUserModalOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<any | null>(null);
+  const [userDetailTab, setUserDetailTab] = useState<'profile' | 'products' | 'sold' | 'orders'>('profile');
+
+  const handleOpenDetailUser = (u: any) => {
+    setViewingUser(u);
+    setUserDetailTab('profile');
+    setIsDetailUserModalOpen(true);
+  };
 
   // Clock effect
   useEffect(() => {
@@ -226,21 +292,226 @@ export default function AdminSIMDashboard({
     }
   };
 
-  // Campus addition handler
+  // User management handlers
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createUserForm.nama_lengkap || !createUserForm.email || !createUserForm.password) {
+      alert('Nama lengkap, email, dan password wajib diisi.');
+      return;
+    }
+    setCreateUserLoading(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createUserForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat akun baru');
+      setIsCreateUserModalOpen(false);
+      setCreateUserForm({
+        nama_lengkap: '',
+        email: '',
+        password: '',
+        no_hp: '',
+        alamat_kos: '',
+        kampus_id: '',
+        role: 'BUYER',
+        status_verifikasi: 'VERIFIED',
+        is_seller: false,
+        nama_bank: '',
+        no_rekening: '',
+        nama_pemilik_rekening: ''
+      });
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setCreateUserLoading(false);
+    }
+  };
+
+  const handleOpenEditUser = (u: any) => {
+    setEditUserForm({
+      userId: u.id,
+      nama_lengkap: u.nama_lengkap || '',
+      email: u.email || '',
+      password: '',
+      no_hp: u.no_hp || '',
+      alamat_kos: u.alamat_kos || '',
+      kampus_id: u.kampus_id || u.kampus?.id || '',
+      role: u.role || 'BUYER',
+      status_verifikasi: u.status_verifikasi || 'VERIFIED',
+      is_seller: !!u.is_seller,
+      nama_bank: u.nama_bank || '',
+      no_rekening: u.no_rekening || '',
+      nama_pemilik_rekening: u.nama_pemilik_rekening || ''
+    });
+    setIsEditUserModalOpen(true);
+  };
+
+  const handleEditUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditUserLoading(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editUserForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal memperbarui akun');
+      setIsEditUserModalOpen(false);
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus akun ${userName}? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const res = await fetch(`/api/admin/users?userId=${userId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menghapus user');
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleChangeUserRole = async (userId: string, newRole: string) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal mengubah role');
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearchQuery.toLowerCase().trim();
+    const matchQuery =
+      !q ||
+      u.nama_lengkap?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.no_hp?.toLowerCase().includes(q) ||
+      u.kampus?.nama_kampus?.toLowerCase().includes(q);
+
+    const matchRole =
+      userRoleFilter === 'ALL'
+        ? true
+        : userRoleFilter === 'SELLER'
+        ? u.is_seller
+        : u.role === userRoleFilter;
+
+    const matchStatus =
+      userStatusFilter === 'ALL' || u.status_verifikasi === userStatusFilter;
+
+    return matchQuery && matchRole && matchStatus;
+  });
+
+  // Campus management handlers
   const handleAddCampus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCampusName.trim()) return;
+    if (!newCampusForm.nama_kampus.trim()) return;
+    setCampusLoading(true);
     try {
       const res = await fetch('/api/admin/campuses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nama_kampus: newCampusName.trim(), kota: 'Surabaya' }),
+        body: JSON.stringify({
+          nama_kampus: newCampusForm.nama_kampus.trim(),
+          kota: newCampusForm.kota.trim() || 'Surabaya'
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menambah kampus');
 
-      setNewCampusName('');
+      setNewCampusForm({ nama_kampus: '', kota: 'Surabaya' });
       setIsCampusModalOpen(false);
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setCampusLoading(false);
+    }
+  };
+
+  const handleOpenEditCampus = (c: any) => {
+    setEditCampusForm({
+      id: c.id,
+      nama_kampus: c.nama_kampus || '',
+      kota: c.kota || 'Surabaya',
+      aktif: typeof c.aktif === 'boolean' ? c.aktif : true
+    });
+    setIsEditCampusModalOpen(true);
+  };
+
+  const handleEditCampusSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCampusForm.nama_kampus.trim()) return;
+    setCampusLoading(true);
+    try {
+      const res = await fetch('/api/admin/campuses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campusId: editCampusForm.id,
+          nama_kampus: editCampusForm.nama_kampus.trim(),
+          kota: editCampusForm.kota.trim(),
+          aktif: editCampusForm.aktif
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal memperbarui kampus');
+
+      setIsEditCampusModalOpen(false);
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setCampusLoading(false);
+    }
+  };
+
+  const handleToggleCampusStatus = async (c: any) => {
+    try {
+      const res = await fetch('/api/admin/campuses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campusId: c.id,
+          aktif: !(typeof c.aktif === 'boolean' ? c.aktif : true)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal mengubah status kampus');
+      refreshAllData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteCampus = async (campusId: string, campusName: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus jaringan kampus "${campusName}"? Seluruh user terkait akan di-unlink.`)) return;
+    try {
+      const res = await fetch(`/api/admin/campuses?campusId=${campusId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menghapus kampus');
+
       refreshAllData();
     } catch (err: any) {
       alert(err.message);
@@ -338,8 +609,8 @@ export default function AdminSIMDashboard({
         {/* SIM Branding Header */}
         <div className="p-6 border-b border-gray-light flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
-              <Leaf className="w-7 h-7 fill-primary" />
+            <div className="w-9 h-9 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Image src="/logo.png" alt="BaranginAja Logo" width={36} height={36} className="object-contain w-full h-full" />
             </div>
             <div className="flex flex-col">
               <span className="text-base font-black text-base-dark tracking-widest uppercase">
@@ -638,7 +909,7 @@ export default function AdminSIMDashboard({
                   </div>
                   <div>
                     <h3 className="text-3xl font-black text-amber-600">{stats.pendingOrders}</h3>
-                    <p className="text-[10px] font-bold text-gray mt-1 uppercase tracking-wider">Perlu konfirmasi QRIS</p>
+                    <p className="text-[10px] font-bold text-gray mt-1 uppercase tracking-wider">Perlu Konfirmasi WA (Hold 5 Mnt)</p>
                   </div>
                 </div>
 
@@ -940,11 +1211,36 @@ export default function AdminSIMDashboard({
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-light">
                         <div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
                             <span className="text-sm font-black text-base-dark font-mono">#{ord.id}</span>
                             <span className={`px-3 py-0.5 text-[10px] font-bold rounded-full border ${badge.bg}`}>
                               {badge.label}
                             </span>
+                            {ord.status === 'MENUNGGU_PEMBAYARAN' && ord.hold_expires_at && (() => {
+                              const expireTime = new Date(ord.hold_expires_at).getTime();
+                              const diffMs = expireTime - Date.now();
+                              const totalSeconds = Math.floor(diffMs / 1000);
+
+                              if (totalSeconds <= 0) {
+                                return (
+                                  <span className="px-3 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1 shadow-xs">
+                                    <Clock className="w-3 h-3 text-rose-600" />
+                                    <span>Hold Expired (Rilis Otomatis)</span>
+                                  </span>
+                                );
+                              }
+
+                              const mins = Math.floor(totalSeconds / 60);
+                              const secs = totalSeconds % 60;
+                              const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+                              return (
+                                <span className="px-3 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs animate-pulse">
+                                  <Clock className="w-3 h-3 text-amber-700" />
+                                  <span>Timer Hold WA: {formatted}</span>
+                                </span>
+                              );
+                            })()}
                             <span className="text-[10px] font-bold text-gray uppercase tracking-wider">
                               Opsi: <strong className="text-base-dark">{ord.opsi_pengiriman}</strong>
                             </span>
@@ -1168,96 +1464,300 @@ export default function AdminSIMDashboard({
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 5: USER & VERIFIKASI SELLER */}
+          {/* TAB 5: MANAJEMEN AKUN & VERIFIKASI PENGGUNA */}
           {/* ========================================================================= */}
           {activeTab === 'users' && (
             <div className="space-y-6">
               
+              {/* Header section with Action Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-white border border-gray-light p-6 rounded-[28px] shadow-sm">
+                <div>
+                  <h2 className="text-sm font-black text-base-dark uppercase tracking-wider">Manajemen Akun &amp; Hak Akses Pengguna</h2>
+                  <p className="text-xs text-gray">Kelola profil user, verifikasi status seller, atur role admin, dan buat akun baru.</p>
+                </div>
+                <button
+                  onClick={() => setIsCreateUserModalOpen(true)}
+                  className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs flex items-center gap-2 shadow-sm transition shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Tambah Akun Baru
+                </button>
+              </div>
+
+              {/* Summary Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-base-white border border-gray-light p-5 rounded-[24px] shadow-xs">
+                  <p className="text-[10px] font-bold text-gray uppercase tracking-wider">Total Pengguna</p>
+                  <p className="text-xl font-black text-base-dark mt-1">{users.length}</p>
+                </div>
+                <div className="bg-base-white border border-gray-light p-5 rounded-[24px] shadow-xs">
+                  <p className="text-[10px] font-bold text-gray uppercase tracking-wider">Penjual (Seller)</p>
+                  <p className="text-xl font-black text-[#007AAD] mt-1">{users.filter((u) => u.is_seller).length}</p>
+                </div>
+                <div className="bg-base-white border border-gray-light p-5 rounded-[24px] shadow-xs">
+                  <p className="text-[10px] font-bold text-gray uppercase tracking-wider">Pending Verifikasi</p>
+                  <p className="text-xl font-black text-amber-600 mt-1">{users.filter((u) => u.status_verifikasi === 'PENDING').length}</p>
+                </div>
+                <div className="bg-base-white border border-gray-light p-5 rounded-[24px] shadow-xs">
+                  <p className="text-[10px] font-bold text-gray uppercase tracking-wider">Administrator</p>
+                  <p className="text-xl font-black text-rose-600 mt-1">{users.filter((u) => u.role === 'ADMIN').length}</p>
+                </div>
+              </div>
+
+              {/* Search & Filter Bar */}
+              <div className="bg-base-white border border-gray-light p-4 rounded-[24px] flex flex-col sm:flex-row items-center gap-3 shadow-sm">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray" />
+                  <input
+                    type="text"
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    placeholder="Cari nama, email, no HP, atau kampus..."
+                    className="w-full pl-10 pr-4 py-2 bg-[#F5F5F3] border border-gray-light rounded-xl text-xs font-semibold text-base-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={userRoleFilter}
+                    onChange={(e: any) => setUserRoleFilter(e.target.value)}
+                    className="p-2 bg-[#F5F5F3] border border-gray-light rounded-xl text-xs font-bold text-base-dark focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="ALL">Semua Role</option>
+                    <option value="BUYER">Buyer / Mahasiswa</option>
+                    <option value="SELLER">Seller / Penjual</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                  <select
+                    value={userStatusFilter}
+                    onChange={(e: any) => setUserStatusFilter(e.target.value)}
+                    className="p-2 bg-[#F5F5F3] border border-gray-light rounded-xl text-xs font-bold text-base-dark focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="ALL">Semua Status</option>
+                    <option value="VERIFIED">VERIFIED</option>
+                    <option value="PENDING">PENDING</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Accounts Table */}
               <div className="bg-base-white border border-gray-light rounded-[28px] overflow-hidden shadow-sm">
-                <table className="w-full text-left text-xs text-base-dark">
-                  <thead className="bg-[#F5F5F3] border-b border-gray-light text-gray uppercase text-[10px] font-bold">
-                    <tr>
-                      <th className="p-4">Nama &amp; Email</th>
-                      <th className="p-4">Kampus (Surabaya)</th>
-                      <th className="p-4">Role &amp; Seller Status</th>
-                      <th className="p-4">Rekening Bank</th>
-                      <th className="p-4 text-center">Status Verifikasi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-light">
-                    {users.map((u) => (
-                      <tr key={u.id} className="hover:bg-[#F9F9F8] transition">
-                        <td className="p-4">
-                          <p className="font-bold text-base-dark">{u.nama_lengkap}</p>
-                          <p className="text-[11px] text-gray">{u.email}</p>
-                          <p className="text-[10px] text-gray">WA: {u.no_hp || '-'}</p>
-                        </td>
-                        <td className="p-4">
-                          <span className="px-3 py-1 bg-base-light text-base-dark rounded-full text-[10px] font-bold border border-gray-light">
-                            {u.kampus?.nama_kampus || 'Surabaya'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-bold text-amber-700">{u.role}</span>
-                          {u.is_seller && <span className="ml-2 text-[10px] text-primary font-bold">(Penjual)</span>}
-                        </td>
-                        <td className="p-4">
-                          <p className="font-mono text-base-dark font-bold text-xs">{u.no_rekening || '-'}</p>
-                          <p className="text-[10px] text-gray">{u.nama_bank || '-'} a.n {u.nama_pemilik_rekening || '-'}</p>
-                        </td>
-                        <td className="p-4 text-center">
-                          <button
-                            onClick={() => handleVerifySeller(u.id, u.status_verifikasi)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold border transition shadow-sm ${
-                              u.status_verifikasi === 'VERIFIED'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
-                            }`}
-                          >
-                            {u.status_verifikasi === 'VERIFIED' ? 'VERIFIED (Klik Unverify)' : 'PENDING (Klik Verifikasi)'}
-                          </button>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-base-dark">
+                    <thead className="bg-[#F5F5F3] border-b border-gray-light text-gray uppercase text-[10px] font-bold">
+                      <tr>
+                        <th className="p-4">Pengguna</th>
+                        <th className="p-4">Kampus &amp; Alamat</th>
+                        <th className="p-4">Role Akses</th>
+                        <th className="p-4">Rekening Bank</th>
+                        <th className="p-4 text-center">Status Verifikasi</th>
+                        <th className="p-4 text-center">Kelola / Aksi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-light">
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-gray font-medium text-xs">
+                            Tidak ada akun pengguna yang sesuai dengan filter.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((u) => (
+                          <tr key={u.id} className="hover:bg-[#F9F9F8] transition">
+                            <td className="p-4">
+                              <button
+                                onClick={() => handleOpenDetailUser(u)}
+                                className="font-bold text-base-dark hover:text-[#007AAD] hover:underline text-left cursor-pointer block"
+                              >
+                                {u.nama_lengkap}
+                              </button>
+                              <p className="text-[11px] text-gray">{u.email}</p>
+                              <p className="text-[10px] text-gray font-mono">WA: {u.no_hp || '-'}</p>
+                            </td>
+                            <td className="p-4">
+                              <span className="inline-block px-2.5 py-0.5 bg-base-light text-base-dark rounded-full text-[10px] font-bold border border-gray-light mb-1">
+                                {u.kampus?.nama_kampus || 'Surabaya'}
+                              </span>
+                              <p className="text-[10px] text-gray line-clamp-1 max-w-[200px]" title={u.alamat_kos || ''}>
+                                {u.alamat_kos || '-'}
+                              </p>
+                            </td>
+                            <td className="p-4">
+                              <select
+                                value={u.role}
+                                onChange={(e) => handleChangeUserRole(u.id, e.target.value)}
+                                className="px-2 py-1 bg-white border border-gray-light rounded-lg text-[11px] font-bold text-base-dark focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                              >
+                                <option value="BUYER">BUYER</option>
+                                <option value="ADMIN">ADMIN</option>
+                              </select>
+                              {u.is_seller && (
+                                <span className="ml-2 inline-block px-2 py-0.5 bg-[#007AAD]/10 text-[#007AAD] font-extrabold text-[9px] rounded-md">
+                                  PENJUAL
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <p className="font-mono text-base-dark font-bold text-xs">{u.no_rekening || '-'}</p>
+                              <p className="text-[10px] text-gray">{u.nama_bank || '-'} a.n {u.nama_pemilik_rekening || '-'}</p>
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => handleVerifySeller(u.id, u.status_verifikasi)}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold border transition shadow-xs cursor-pointer ${
+                                  u.status_verifikasi === 'VERIFIED'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-rose-50 hover:text-rose-700'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                }`}
+                              >
+                                {u.status_verifikasi === 'VERIFIED' ? 'VERIFIED' : 'PENDING'}
+                              </button>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleOpenDetailUser(u)}
+                                  title="Lihat Rincian Akun & Produk Seller"
+                                  className="p-1.5 bg-[#007AAD]/10 hover:bg-[#007AAD]/20 text-[#007AAD] rounded-lg border border-[#007AAD]/20 transition cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditUser(u)}
+                                  title="Edit Detail Akun"
+                                  className="p-1.5 bg-base-light hover:bg-gray-light text-base-dark rounded-lg border border-gray-light transition cursor-pointer"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u.id, u.nama_lengkap)}
+                                  title="Hapus Akun"
+                                  disabled={u.id === user?.id}
+                                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg border border-rose-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 6: JARINGAN KAMPUS SURABAYA */}
+          {/* TAB 6: JARINGAN KAMPUS SURABAYA (CRUD) */}
           {/* ========================================================================= */}
           {activeTab === 'campuses' && (
             <div className="space-y-6">
               
-              <div className="flex items-center justify-between">
+              {/* Header section with add button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-white border border-gray-light p-6 rounded-[28px] shadow-sm">
                 <div>
-                  <h2 className="text-sm font-black text-base-dark uppercase tracking-wider">Jaringan Kampus Terdaftar (Surabaya)</h2>
-                  <p className="text-xs text-gray">Daftar kampus yang berhak melakukan transaksi di platform BaranginAja.</p>
+                  <h2 className="text-base font-black text-base-dark uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-primary" />
+                    <span>Jaringan Kampus Terdaftar ({campuses.length} Kampus)</span>
+                  </h2>
+                  <p className="text-xs text-gray font-medium mt-1">
+                    Kelola daftar kampus mitra Surabaya, status keaktifan cabang, dan data jaringan perguruan tinggi.
+                  </p>
                 </div>
+
                 <button
-                  onClick={() => setIsCampusModalOpen(true)}
-                  className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs flex items-center gap-2 shadow-sm transition"
+                  onClick={() => {
+                    setNewCampusForm({ nama_kampus: '', kota: 'Surabaya' });
+                    setIsCampusModalOpen(true);
+                  }}
+                  className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs flex items-center gap-2 shadow-sm transition shrink-0 cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" /> Tambah Kampus Baru
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Kampus Baru</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {campuses.map((c) => (
-                  <div key={c.id} className="bg-base-white border border-gray-light p-6 rounded-[24px] flex items-center justify-between shadow-sm">
-                    <div>
-                      <h3 className="font-bold text-base-dark text-sm">{c.nama_kampus}</h3>
-                      <p className="text-[11px] text-gray">Kota: {c.kota}</p>
-                      <p className="text-[10px] font-bold text-primary mt-2 uppercase tracking-wide">{c._count?.users || 0} Mahasiswa Terdaftar</p>
-                    </div>
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold">
-                      Aktif
-                    </span>
+              {/* Campus Grid Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campuses.length === 0 ? (
+                  <div className="col-span-full p-12 text-center bg-base-white border border-gray-light rounded-[28px] text-gray">
+                    <Building2 className="w-12 h-12 mx-auto text-gray/40 mb-3" />
+                    <p className="text-sm font-bold text-base-dark">Belum Ada Kampus Terdaftar</p>
+                    <p className="text-xs">Klik &quot;Tambah Kampus Baru&quot; untuk menginput kampus baru ke jaringan SIM.</p>
                   </div>
-                ))}
+                ) : (
+                  campuses.map((c) => {
+                    const isAktif = typeof c.aktif === 'boolean' ? c.aktif : true;
+                    return (
+                      <div
+                        key={c.id}
+                        className="bg-base-white border border-gray-light p-6 rounded-[28px] flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md transition"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-primary-light text-primary flex items-center justify-center font-bold shrink-0">
+                              <Building2 className="w-5 h-5" />
+                            </div>
+                            <button
+                              onClick={() => handleToggleCampusStatus(c)}
+                              className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase transition cursor-pointer ${
+                                isAktif
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                              }`}
+                              title="Klik untuk ubah status aktif/non-aktif"
+                            >
+                              {isAktif ? 'AKTIF' : 'NON-AKTIF'}
+                            </button>
+                          </div>
+
+                          <div>
+                            <h3 className="font-extrabold text-base-dark text-base">{c.nama_kampus}</h3>
+                            <p className="text-xs text-gray font-medium">Kota: <strong className="text-base-dark">{c.kota || 'Surabaya'}</strong></p>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-light/60 flex items-center justify-between text-xs">
+                          <button
+                            onClick={() => handleOpenDetailCampus(c)}
+                            className="font-bold text-primary text-[11px] uppercase tracking-wide hover:underline cursor-pointer flex items-center gap-1"
+                            title="Klik untuk lihat rincian mahasiswa/user terdaftar"
+                          >
+                            <span>{c._count?.users || 0} Mahasiswa</span>
+                          </button>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenDetailCampus(c)}
+                              className="px-3 py-1.5 bg-[#007AAD]/10 hover:bg-[#007AAD]/20 text-[#007AAD] font-bold rounded-xl border border-[#007AAD]/20 transition cursor-pointer flex items-center gap-1 text-xs"
+                              title="Lihat Rincian Akun Terdaftar di Kampus Ini"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Akun ({c._count?.users || 0})</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEditCampus(c)}
+                              className="p-1.5 bg-base-light hover:bg-gray-light text-base-dark rounded-xl border border-gray-light transition cursor-pointer"
+                              title="Edit Data Kampus"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCampus(c.id, c.nama_kampus)}
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-200 transition cursor-pointer"
+                              title="Hapus Kampus"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
             </div>
@@ -1304,37 +1804,1137 @@ export default function AdminSIMDashboard({
 
       {/* Modal Add Campus */}
       {isCampusModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-base-dark/40 backdrop-blur-sm">
-          <div className="bg-base-white border border-gray-light rounded-2xl p-8 max-w-md w-full text-base-dark relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-base-dark/50 backdrop-blur-sm">
+          <div className="bg-base-white border border-gray-light rounded-3xl p-8 max-w-md w-full text-base-dark relative shadow-2xl">
             <button
               onClick={() => setIsCampusModalOpen(false)}
-              className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light"
+              className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-base font-black uppercase tracking-wider mb-6">Tambah Kampus Surabaya</h3>
-            <form onSubmit={handleAddCampus} className="space-y-5 text-xs">
+            <h3 className="text-base font-black uppercase tracking-wider mb-1">Tambah Kampus Baru</h3>
+            <p className="text-xs text-gray mb-6">Daftarkan perguruan tinggi mitra baru ke dalam sistem BaranginAja.</p>
+
+            <form onSubmit={handleAddCampus} className="space-y-4 text-xs">
               <div>
-                <label className="block text-base-dark font-bold mb-2 uppercase tracking-wide">Nama Kampus</label>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Nama Kampus *</label>
                 <input
                   type="text"
                   required
-                  value={newCampusName}
-                  onChange={(e) => setNewCampusName(e.target.value)}
-                  placeholder="Contoh: Universitas Pembangunan Nasional (UPN) Veteran"
-                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  value={newCampusForm.nama_kampus}
+                  onChange={(e) => setNewCampusForm({ ...newCampusForm, nama_kampus: e.target.value })}
+                  placeholder="Contoh: UPN Veteran Jawa Timur"
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
+
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Kota Lokasi *</label>
+                <input
+                  type="text"
+                  required
+                  value={newCampusForm.kota}
+                  onChange={(e) => setNewCampusForm({ ...newCampusForm, kota: e.target.value })}
+                  placeholder="Surabaya"
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
               <button
                 type="submit"
-                className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs shadow-sm transition"
+                disabled={campusLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
-                Simpan Kampus Baru
+                {campusLoading ? 'Menyimpan...' : 'Simpan Kampus Baru'}
               </button>
             </form>
           </div>
         </div>
       )}
+
+      {/* Modal Edit Campus */}
+      {isEditCampusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-base-dark/50 backdrop-blur-sm">
+          <div className="bg-base-white border border-gray-light rounded-3xl p-8 max-w-md w-full text-base-dark relative shadow-2xl">
+            <button
+              onClick={() => setIsEditCampusModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-black uppercase tracking-wider mb-1">Edit Data Kampus</h3>
+            <p className="text-xs text-gray mb-6">Perbarui nama, kota, atau status aktif jaringan kampus.</p>
+
+            <form onSubmit={handleEditCampusSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Nama Kampus *</label>
+                <input
+                  type="text"
+                  required
+                  value={editCampusForm.nama_kampus}
+                  onChange={(e) => setEditCampusForm({ ...editCampusForm, nama_kampus: e.target.value })}
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Kota Lokasi *</label>
+                <input
+                  type="text"
+                  required
+                  value={editCampusForm.kota}
+                  onChange={(e) => setEditCampusForm({ ...editCampusForm, kota: e.target.value })}
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Status Keaktifan</label>
+                <select
+                  value={editCampusForm.aktif ? 'true' : 'false'}
+                  onChange={(e) => setEditCampusForm({ ...editCampusForm, aktif: e.target.value === 'true' })}
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  <option value="true">AKTIF (Dapat Digunakan Mahasiswa)</option>
+                  <option value="false">NON-AKTIF (Diarsipkan)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={campusLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {campusLoading ? 'Memperbarui...' : 'Simpan Perubahan Kampus'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create User */}
+      {isCreateUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-base-dark/40 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-base-white border border-gray-light rounded-3xl p-6 sm:p-8 max-w-lg w-full text-base-dark relative shadow-2xl my-8">
+            <button
+              onClick={() => setIsCreateUserModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-black uppercase tracking-wider mb-1">Tambah Akun Pengguna Baru</h3>
+            <p className="text-xs text-gray mb-6">Buat akun buyer, seller, atau admin secara manual dari SIM Control Panel.</p>
+
+            <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Nama Lengkap *</label>
+                <input
+                  type="text"
+                  required
+                  value={createUserForm.nama_lengkap}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, nama_lengkap: e.target.value })}
+                  placeholder="Contoh: Budi Santoso"
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={createUserForm.email}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                    placeholder="nama@email.com"
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Password *</label>
+                  <input
+                    type="password"
+                    required
+                    value={createUserForm.password}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, password: e.target.value })}
+                    placeholder="******"
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">No. WhatsApp / HP</label>
+                  <input
+                    type="text"
+                    value={createUserForm.no_hp}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, no_hp: e.target.value })}
+                    placeholder="081234567890"
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Kampus (Surabaya)</label>
+                  <select
+                    value={createUserForm.kampus_id}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, kampus_id: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="">Pilih Kampus</option>
+                    {campuses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nama_kampus}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Alamat Kos Lengkap</label>
+                <textarea
+                  rows={2}
+                  value={createUserForm.alamat_kos}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, alamat_kos: e.target.value })}
+                  placeholder="Contoh: Jl. Keputih Tegal Timur No. 12, Sukolilo, Surabaya"
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Role Akses</label>
+                  <select
+                    value={createUserForm.role}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, role: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="BUYER">BUYER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Status Verifikasi</label>
+                  <select
+                    value={createUserForm.status_verifikasi}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, status_verifikasi: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="VERIFIED">VERIFIED</option>
+                    <option value="PENDING">PENDING</option>
+                  </select>
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-xs">
+                    <input
+                      type="checkbox"
+                      checked={createUserForm.is_seller}
+                      onChange={(e) => setCreateUserForm({ ...createUserForm, is_seller: e.target.checked })}
+                      className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    />
+                    <span>Daftarkan Penjual</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#F5F5F3] border border-gray-light rounded-2xl space-y-3">
+                <p className="text-[10px] font-extrabold uppercase text-gray tracking-wider">Info Rekening Bank (Opsional)</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    value={createUserForm.nama_bank}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, nama_bank: e.target.value })}
+                    placeholder="Nama Bank (BCA/SeaBank)"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={createUserForm.no_rekening}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, no_rekening: e.target.value })}
+                    placeholder="No. Rekening"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={createUserForm.nama_pemilik_rekening}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, nama_pemilik_rekening: e.target.value })}
+                    placeholder="Nama Pemilik"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={createUserLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {createUserLoading ? 'Memproses...' : 'Buat Akun Baru'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit User */}
+      {isEditUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-base-dark/40 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-base-white border border-gray-light rounded-3xl p-6 sm:p-8 max-w-lg w-full text-base-dark relative shadow-2xl my-8">
+            <button
+              onClick={() => setIsEditUserModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-black uppercase tracking-wider mb-1">Edit Profil &amp; Hak Akses Akun</h3>
+            <p className="text-xs text-gray mb-6">Perbarui data detail pengguna, role, atau reset password.</p>
+
+            <form onSubmit={handleEditUserSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Nama Lengkap</label>
+                <input
+                  type="text"
+                  required
+                  value={editUserForm.nama_lengkap}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, nama_lengkap: e.target.value })}
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={editUserForm.email}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Password Baru (Opsional)</label>
+                  <input
+                    type="password"
+                    value={editUserForm.password}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                    placeholder="Kosongkan jika tak diubah"
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">No. WhatsApp / HP</label>
+                  <input
+                    type="text"
+                    value={editUserForm.no_hp}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, no_hp: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Kampus (Surabaya)</label>
+                  <select
+                    value={editUserForm.kampus_id}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, kampus_id: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="">Pilih Kampus</option>
+                    {campuses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nama_kampus}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Alamat Kos Lengkap</label>
+                <textarea
+                  rows={2}
+                  value={editUserForm.alamat_kos}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, alamat_kos: e.target.value })}
+                  className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Role Akses</label>
+                  <select
+                    value={editUserForm.role}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="BUYER">BUYER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-base-dark font-bold mb-1.5 uppercase tracking-wide text-[10px]">Status Verifikasi</label>
+                  <select
+                    value={editUserForm.status_verifikasi}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, status_verifikasi: e.target.value })}
+                    className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="VERIFIED">VERIFIED</option>
+                    <option value="PENDING">PENDING</option>
+                  </select>
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-xs">
+                    <input
+                      type="checkbox"
+                      checked={editUserForm.is_seller}
+                      onChange={(e) => setEditUserForm({ ...editUserForm, is_seller: e.target.checked })}
+                      className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    />
+                    <span>Daftarkan Penjual</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#F5F5F3] border border-gray-light rounded-2xl space-y-3">
+                <p className="text-[10px] font-extrabold uppercase text-gray tracking-wider">Info Rekening Bank</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    value={editUserForm.nama_bank}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, nama_bank: e.target.value })}
+                    placeholder="Nama Bank"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={editUserForm.no_rekening}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, no_rekening: e.target.value })}
+                    placeholder="No. Rekening"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={editUserForm.nama_pemilik_rekening}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, nama_pemilik_rekening: e.target.value })}
+                    placeholder="Nama Pemilik"
+                    className="p-2.5 bg-white border border-gray-light rounded-lg font-medium focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={editUserLoading}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-full text-xs shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {editUserLoading ? 'Memperbarui...' : 'Simpan Perubahan Akun'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail & Rincian Akun Database */}
+      {isDetailUserModalOpen && viewingUser && (() => {
+        const uProds = viewingUser.products && viewingUser.products.length > 0
+          ? viewingUser.products
+          : products.filter((p) => p.seller_id === viewingUser.id || p.seller?.email === viewingUser.email);
+        const uSold = uProds.filter((p: any) => p.status === 'TERJUAL');
+        const uOrders = orders.filter((o) => o.buyer_id === viewingUser.id || o.buyer?.email === viewingUser.email);
+        const totalSoldNominal = uSold.reduce((acc: number, item: any) => acc + (item.harga_input || 0), 0);
+
+        const initials = (viewingUser.nama_lengkap || 'US')
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .substring(0, 2)
+          .toUpperCase();
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-base-dark/60 backdrop-blur-md overflow-y-auto">
+            <div className="bg-base-white border border-gray-light rounded-[32px] max-w-5xl w-full text-base-dark relative shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Modal Top Bar */}
+              <div className="px-8 py-5 border-b border-gray-light flex items-center justify-between bg-base-white shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-primary-light text-primary flex items-center justify-center font-bold">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-base-dark uppercase tracking-wider">
+                      Rincian &amp; Informasi Database Akun
+                    </h2>
+                    <p className="text-[11px] text-gray font-medium">
+                      Akses penuh informasi data user, produk seller, dan riwayat transaksi
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsDetailUserModalOpen(false)}
+                  className="p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light transition cursor-pointer"
+                  title="Tutup Modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Content Container */}
+              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+                
+                {/* User Profile Banner Header */}
+                <div className="bg-gradient-to-r from-primary/5 via-[#F5F5F3] to-base-white p-6 rounded-3xl border border-primary/10 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+                  
+                  <div className="flex items-center gap-4">
+                    {/* User Initials Avatar */}
+                    <div className="w-16 h-16 rounded-2xl bg-primary text-white flex items-center justify-center text-xl font-black shadow-md shrink-0 border-2 border-white">
+                      {initials}
+                    </div>
+
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-xl font-black text-base-dark tracking-wide">{viewingUser.nama_lengkap}</h3>
+                        
+                        <span className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-wider shadow-xs">
+                          {viewingUser.role}
+                        </span>
+
+                        <span className={`px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-wider border ${
+                          viewingUser.status_verifikasi === 'VERIFIED'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                        }`}>
+                          {viewingUser.status_verifikasi}
+                        </span>
+
+                        {viewingUser.is_seller && (
+                          <span className="px-3 py-1 bg-[#007AAD]/10 text-[#007AAD] border border-[#007AAD]/20 font-black text-[10px] rounded-full uppercase tracking-wider">
+                            SELLER TERDAFTAR
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 flex-wrap text-xs text-gray font-medium pt-0.5">
+                        <span className="flex items-center gap-1.5 text-base-dark font-semibold">
+                          <FileText className="w-3.5 h-3.5 text-primary" />
+                          {viewingUser.email}
+                        </span>
+
+                        {viewingUser.no_hp && (
+                          <a
+                            href={`https://wa.me/${viewingUser.no_hp.replace(/^0/, '62')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-emerald-700 hover:underline font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200"
+                          >
+                            <PhoneCall className="w-3 h-3 text-emerald-600" />
+                            <span>WA: {viewingUser.no_hp}</span>
+                            <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                          </a>
+                        )}
+
+                        <span className="text-gray-dark">
+                          Kampus: <strong className="text-base-dark">{viewingUser.kampus?.nama_kampus || 'Surabaya'}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Header Actions */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      onClick={() => {
+                        setIsDetailUserModalOpen(false);
+                        handleOpenEditUser(viewingUser);
+                      }}
+                      className="px-5 py-2.5 bg-primary text-white hover:bg-primary-dark text-xs font-bold rounded-2xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit Data User</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsDetailUserModalOpen(false);
+                        handleDeleteUser(viewingUser.id, viewingUser.nama_lengkap);
+                      }}
+                      className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-2xl transition flex items-center gap-1.5 cursor-pointer"
+                      title="Hapus User"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+
+                </div>
+
+                {/* Navigation Sub-Tabs (Pill Buttons Style) */}
+                <div className="flex items-center gap-2 border-b border-gray-light pb-4 overflow-x-auto custom-scrollbar text-xs font-bold">
+                  <button
+                    onClick={() => setUserDetailTab('profile')}
+                    className={`px-4 py-2.5 rounded-2xl transition flex items-center gap-2 cursor-pointer ${
+                      userDetailTab === 'profile'
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-[#F5F5F3] text-gray hover:text-base-dark hover:bg-base-light'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Informasi Database</span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserDetailTab('products')}
+                    className={`px-4 py-2.5 rounded-2xl transition flex items-center gap-2 cursor-pointer ${
+                      userDetailTab === 'products'
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-[#F5F5F3] text-gray hover:text-base-dark hover:bg-base-light'
+                    }`}
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>Produk Upload</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      userDetailTab === 'products' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+                    }`}>
+                      {uProds.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserDetailTab('sold')}
+                    className={`px-4 py-2.5 rounded-2xl transition flex items-center gap-2 cursor-pointer ${
+                      userDetailTab === 'sold'
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-[#F5F5F3] text-gray hover:text-base-dark hover:bg-base-light'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Produk Terjual</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      userDetailTab === 'sold' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {uSold.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setUserDetailTab('orders')}
+                    className={`px-4 py-2.5 rounded-2xl transition flex items-center gap-2 cursor-pointer ${
+                      userDetailTab === 'orders'
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-[#F5F5F3] text-gray hover:text-base-dark hover:bg-base-light'
+                    }`}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Riwayat Pembelian</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      userDetailTab === 'orders' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {uOrders.length}
+                    </span>
+                  </button>
+                </div>
+
+                {/* TAB 1: INFORMASI DATABASE LENGKAP */}
+                {userDetailTab === 'profile' && (
+                  <div className="space-y-6 text-xs">
+                    
+                    {/* Grid 3 Kolom Data Utama */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      
+                      {/* Box 1: Identitas & Akun */}
+                      <div className="bg-[#F9F9F8] border border-gray-light rounded-3xl p-5 space-y-3 shadow-2xs">
+                        <div className="flex items-center gap-2 text-primary font-black uppercase text-[11px] tracking-wider pb-2 border-b border-gray-light/60">
+                          <UserCheck className="w-4 h-4" />
+                          <span>Identitas &amp; Akun</span>
+                        </div>
+                        
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">User ID (UUID)</span>
+                          <p className="font-mono text-base-dark font-bold text-[11px] bg-base-white px-2.5 py-1 rounded-lg border border-gray-light select-all truncate">
+                            {viewingUser.id}
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">NIM / No. KTP Identitas</span>
+                          <p className="font-bold text-base-dark">{viewingUser.nim_ktp || '-'}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Tanggal Terdaftar</span>
+                          <p className="font-bold text-base-dark">{formatDate(viewingUser.created_at)}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Akses Akun</span>
+                          <p className="font-bold text-base-dark">{viewingUser.role} • {viewingUser.status_verifikasi}</p>
+                        </div>
+                      </div>
+
+                      {/* Box 2: Alamat Kos & GPS Surabaya */}
+                      <div className="bg-[#F9F9F8] border border-gray-light rounded-3xl p-5 space-y-3 shadow-2xs">
+                        <div className="flex items-center gap-2 text-[#007AAD] font-black uppercase text-[11px] tracking-wider pb-2 border-b border-gray-light/60">
+                          <Building2 className="w-4 h-4" />
+                          <span>Kos &amp; Lokasi Kampus</span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Kampus Utama</span>
+                          <p className="font-bold text-base-dark">{viewingUser.kampus?.nama_kampus || 'Surabaya'}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Alamat Kos Lengkap</span>
+                          <p className="font-medium text-base-dark leading-relaxed">{viewingUser.alamat_kos || 'Belum diisi'}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Koordinat GPS Leaflet</span>
+                          {viewingUser.lat ? (
+                            <a
+                              href={`https://maps.google.com/?q=${viewingUser.lat},${viewingUser.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono font-bold text-[#007AAD] hover:underline flex items-center gap-1"
+                            >
+                              <span>{viewingUser.lat.toFixed(5)}, {viewingUser.lng.toFixed(5)}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <p className="text-gray font-medium">Belum diset pada peta</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Box 3: Rekening Bank Seller (Untuk Payout) */}
+                      <div className="bg-[#F9F9F8] border border-gray-light rounded-3xl p-5 space-y-3 shadow-2xs">
+                        <div className="flex items-center gap-2 text-emerald-700 font-black uppercase text-[11px] tracking-wider pb-2 border-b border-gray-light/60">
+                          <CreditCard className="w-4 h-4" />
+                          <span>Pencairan Rekening (Payout)</span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Nama Bank</span>
+                          <p className="font-extrabold text-base-dark">{viewingUser.nama_bank || '-'}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Nomor Rekening</span>
+                          <p className="font-mono font-black text-emerald-800 text-sm">{viewingUser.no_rekening || '-'}</p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-widest block mb-0.5">Atas Nama Pemilik</span>
+                          <p className="font-bold text-base-dark">{viewingUser.nama_pemilik_rekening || '-'}</p>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* KPI Highlight Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                      <div className="p-5 bg-base-light rounded-3xl border border-gray-light flex items-center justify-between shadow-2xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-gray uppercase tracking-wider block">Total Upload Produk</span>
+                          <p className="text-2xl font-black text-primary mt-1">{uProds.length} Barang</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-2xl bg-primary-light text-primary flex items-center justify-center font-bold">
+                          <Package className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-emerald-50 rounded-3xl border border-emerald-200 flex items-center justify-between shadow-2xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Total Barang Terjual</span>
+                          <p className="text-2xl font-black text-emerald-700 mt-1">{uSold.length} Barang</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-blue-50 rounded-3xl border border-blue-200 flex items-center justify-between shadow-2xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">Total Hasil Penjualan</span>
+                          <p className="text-2xl font-black text-blue-700 mt-1">{formatRupiah(totalSoldNominal)}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                          <DollarSign className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+                {/* TAB 2: PRODUK UPLOAD */}
+                {userDetailTab === 'products' && (
+                  <div className="space-y-4">
+                    {uProds.length === 0 ? (
+                      <div className="p-12 text-center bg-[#F9F9F8] border border-gray-light rounded-3xl text-gray space-y-2">
+                        <Package className="w-10 h-10 mx-auto text-gray/40" />
+                        <p className="text-sm font-bold text-base-dark">Belum ada barang diunggah</p>
+                        <p className="text-xs">User ini belum mengunggah produk barang bekas ke catalog.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                        {uProds.map((p: any) => (
+                          <div
+                            key={p.id}
+                            className="p-4 bg-base-white border border-gray-light rounded-2xl flex items-center justify-between gap-4 hover:border-primary/40 transition shadow-2xs"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div className="w-16 h-16 rounded-2xl bg-gray-light/40 border border-gray-light overflow-hidden shrink-0">
+                                <img
+                                  src={
+                                    p.foto_urls
+                                      ? (typeof p.foto_urls === 'string' ? JSON.parse(p.foto_urls)[0] : p.foto_urls[0])
+                                      : '/logo.png'
+                                  }
+                                  alt={p.nama_barang}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-extrabold text-sm text-base-dark truncate">{p.nama_barang}</p>
+                                <p className="text-[11px] text-gray mt-0.5">
+                                  Kategori: <strong className="text-base-dark">{p.kategori?.nama_kategori || 'Umum'}</strong> • Kondisi: {p.kondisi}
+                                </p>
+                                <p className="text-[10px] text-gray font-mono mt-0.5">
+                                  Post: {formatDate(p.created_at)}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full border uppercase ${
+                                p.status === 'TERJUAL'
+                                  ? 'bg-rose-100 text-rose-800 border-rose-200'
+                                  : p.status === 'DIPESAN'
+                                  ? 'bg-amber-100 text-amber-800 border-amber-200'
+                                  : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                              }`}>
+                                {p.status}
+                              </span>
+                              <p className="font-black text-primary text-base mt-1">{formatRupiah(p.harga_jual)}</p>
+                              <p className="text-[10px] text-gray font-medium">Harga Seller: {formatRupiah(p.harga_input)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 3: PRODUK TERJUAL */}
+                {userDetailTab === 'sold' && (
+                  <div className="space-y-4">
+                    <div className="p-5 bg-gradient-to-r from-emerald-50 via-emerald-50/50 to-base-white border border-emerald-200 rounded-3xl flex items-center justify-between shadow-2xs">
+                      <div>
+                        <p className="font-black text-sm text-emerald-900">Total Nominal Penjualan Seller Selesai</p>
+                        <p className="text-xs text-emerald-700 mt-0.5">Estimasi nominal murni yang siap/telah dicairkan ke rekening seller</p>
+                      </div>
+                      <span className="text-2xl font-black text-emerald-700">{formatRupiah(totalSoldNominal)}</span>
+                    </div>
+
+                    {uSold.length === 0 ? (
+                      <div className="p-12 text-center bg-[#F9F9F8] border border-gray-light rounded-3xl text-gray space-y-2">
+                        <CheckCircle2 className="w-10 h-10 mx-auto text-gray/40" />
+                        <p className="text-sm font-bold text-base-dark">Belum ada produk terjual</p>
+                        <p className="text-xs">Belum ada barang milik seller ini yang berstatus TERJUAL.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                        {uSold.map((p: any) => (
+                          <div
+                            key={p.id}
+                            className="p-4 bg-base-white border border-gray-light rounded-2xl flex items-center justify-between gap-4 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div className="w-16 h-16 rounded-2xl bg-gray-light/40 border border-gray-light overflow-hidden shrink-0">
+                                <img
+                                  src={
+                                    p.foto_urls
+                                      ? (typeof p.foto_urls === 'string' ? JSON.parse(p.foto_urls)[0] : p.foto_urls[0])
+                                      : '/logo.png'
+                                  }
+                                  alt={p.nama_barang}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-extrabold text-sm text-base-dark truncate">{p.nama_barang}</p>
+                                <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[9px] font-black rounded-md uppercase inline-block mt-1">
+                                  TERJUAL
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-gray uppercase font-bold">Hasil Seller</p>
+                              <p className="font-black text-emerald-700 text-base">{formatRupiah(p.harga_input)}</p>
+                              <p className="text-[10px] text-gray">Katalog: {formatRupiah(p.harga_jual)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 4: RIWAYAT PEMBELIAN */}
+                {userDetailTab === 'orders' && (
+                  <div className="space-y-4">
+                    {uOrders.length === 0 ? (
+                      <div className="p-12 text-center bg-[#F9F9F8] border border-gray-light rounded-3xl text-gray space-y-2">
+                        <ShoppingBag className="w-10 h-10 mx-auto text-gray/40" />
+                        <p className="text-sm font-bold text-base-dark">Belum ada transaksi pembelian</p>
+                        <p className="text-xs">User ini belum pernah melakukan pemesanan barang sebagai buyer.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                        {uOrders.map((o: any) => (
+                          <div
+                            key={o.id}
+                            className="p-4 bg-base-white border border-gray-light rounded-2xl flex items-center justify-between gap-4 shadow-2xs hover:border-primary/40 transition"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-xs text-base-dark">#{o.id.substring(0, 8)}</span>
+                                <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase">
+                                  {o.status}
+                                </span>
+                              </div>
+                              <p className="font-bold text-sm text-base-dark">{o.product?.nama_barang || 'Produk'}</p>
+                              <p className="text-[11px] text-gray font-mono">Waktu Transaksi: {formatDate(o.created_at)}</p>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-gray uppercase font-bold">Total Dibayar</p>
+                              <p className="font-black text-primary text-base">{formatRupiah(o.total_harga)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* Modal Footer Bar */}
+              <div className="px-8 py-4 bg-[#F9F9F8] border-t border-gray-light flex items-center justify-between shrink-0 text-xs">
+                <span className="text-gray font-medium">
+                  ID Database: <strong className="font-mono text-base-dark select-all">{viewingUser.id}</strong>
+                </span>
+
+                <button
+                  onClick={() => setIsDetailUserModalOpen(false)}
+                  className="px-6 py-2.5 bg-base-dark hover:bg-black text-white font-bold rounded-2xl transition cursor-pointer"
+                >
+                  Tutup Rincian
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Detail Akun Terdaftar di Kampus */}
+      {isCampusDetailModalOpen && viewingCampus && (() => {
+        const campusUsers = users.filter(
+          (u) => u.kampus_id === viewingCampus.id || u.kampus?.id === viewingCampus.id || u.kampus?.nama_kampus === viewingCampus.nama_kampus
+        );
+        const filteredCampusUsers = campusUsers.filter((u) => {
+          const q = campusUserSearchQuery.toLowerCase().trim();
+          return (
+            !q ||
+            u.nama_lengkap?.toLowerCase().includes(q) ||
+            u.email?.toLowerCase().includes(q) ||
+            u.no_hp?.toLowerCase().includes(q) ||
+            u.role?.toLowerCase().includes(q)
+          );
+        });
+
+        const sellerCount = campusUsers.filter((u) => u.is_seller).length;
+        const buyerCount = campusUsers.filter((u) => u.role === 'BUYER').length;
+        const adminCount = campusUsers.filter((u) => u.role === 'ADMIN').length;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-base-dark/60 backdrop-blur-md overflow-y-auto">
+            <div className="bg-base-white border border-gray-light rounded-[32px] max-w-4xl w-full text-base-dark relative shadow-2xl my-auto max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Header Banner Modal */}
+              <div className="p-6 sm:p-8 bg-gradient-to-r from-primary/5 via-[#F5F5F3] to-base-white border-b border-gray-light flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                    <Building2 className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-black text-base-dark tracking-wide">{viewingCampus.nama_kampus}</h2>
+                      <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full uppercase border ${
+                        viewingCampus.aktif !== false
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-rose-100 text-rose-800 border-rose-200'
+                      }`}>
+                        {viewingCampus.aktif !== false ? 'AKTIF' : 'NON-AKTIF'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray font-medium mt-0.5">
+                      Kota: <strong className="text-base-dark">{viewingCampus.kota || 'Surabaya'}</strong> • ID: <span className="font-mono">{viewingCampus.id.substring(0, 8)}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsCampusDetailModalOpen(false)}
+                  className="p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light transition cursor-pointer self-start sm:self-auto"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Sub-Header Stats & Search Bar */}
+              <div className="p-6 border-b border-gray-light bg-base-white space-y-4 shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <div className="px-3.5 py-1.5 bg-primary/10 text-primary font-black rounded-2xl border border-primary/20">
+                      Total {campusUsers.length} Akun Terdaftar
+                    </div>
+                    <div className="px-3 py-1.5 bg-[#007AAD]/10 text-[#007AAD] font-black rounded-2xl border border-[#007AAD]/20">
+                      {sellerCount} Penjual (Seller)
+                    </div>
+                    <div className="px-3 py-1.5 bg-blue-50 text-blue-700 font-black rounded-2xl border border-blue-200">
+                      {buyerCount} Pembeli (Buyer)
+                    </div>
+                    {adminCount > 0 && (
+                      <div className="px-3 py-1.5 bg-purple-50 text-purple-700 font-black rounded-2xl border border-purple-200">
+                        {adminCount} Admin
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Search input for campus users */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray" />
+                    <input
+                      type="text"
+                      value={campusUserSearchQuery}
+                      onChange={(e) => setCampusUserSearchQuery(e.target.value)}
+                      placeholder="Cari nama / email / WA..."
+                      className="w-full bg-[#F5F5F3] border border-gray-light rounded-full pl-9 pr-4 py-2 text-xs text-base-dark placeholder-gray focus:outline-none focus:ring-1 focus:ring-primary transition"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Users List Container */}
+              <div className="p-6 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+                {filteredCampusUsers.length === 0 ? (
+                  <div className="p-12 text-center text-gray space-y-2">
+                    <Users className="w-10 h-10 mx-auto text-gray/40" />
+                    <p className="text-sm font-bold text-base-dark">Tidak Ada Akun Ditemukan</p>
+                    <p className="text-xs">
+                      {campusUserSearchQuery
+                        ? 'Tidak ada mahasiswa yang cocok dengan pencarian.'
+                        : 'Belum ada akun user yang terhubung dengan kampus ini.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-gray-light rounded-2xl">
+                    <table className="w-full text-left text-xs text-base-dark">
+                      <thead className="bg-[#F5F5F3] border-b border-gray-light text-gray uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="p-3.5">Nama &amp; Kontak User</th>
+                          <th className="p-3.5">Role &amp; Status</th>
+                          <th className="p-3.5">Alamat Kos</th>
+                          <th className="p-3.5 text-center">Aksi Rincian</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-light/60">
+                        {filteredCampusUsers.map((u) => (
+                          <tr key={u.id} className="hover:bg-base-light/50 transition">
+                            <td className="p-3.5">
+                              <p className="font-extrabold text-base-dark">{u.nama_lengkap}</p>
+                              <p className="text-[11px] text-gray">{u.email}</p>
+                              {u.no_hp && (
+                                <a
+                                  href={`https://wa.me/${u.no_hp.replace(/^0/, '62')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-emerald-700 font-bold hover:underline inline-flex items-center gap-1 mt-0.5"
+                                >
+                                  <PhoneCall className="w-3 h-3 text-emerald-600" />
+                                  <span>WA: {u.no_hp}</span>
+                                </a>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-2.5 py-0.5 bg-primary text-white text-[9px] font-black rounded-md uppercase">
+                                  {u.role}
+                                </span>
+                                <span className={`px-2 py-0.5 text-[9px] font-black rounded-md uppercase ${
+                                  u.status_verifikasi === 'VERIFIED'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {u.status_verifikasi}
+                                </span>
+                                {u.is_seller && (
+                                  <span className="px-2 py-0.5 bg-[#007AAD]/10 text-[#007AAD] font-black text-[9px] rounded-md uppercase">
+                                    PENJUAL
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <p className="text-[11px] text-base-dark line-clamp-1 max-w-[220px]" title={u.alamat_kos || ''}>
+                                {u.alamat_kos || '-'}
+                              </p>
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <button
+                                onClick={() => {
+                                  setIsCampusDetailModalOpen(false);
+                                  handleOpenDetailUser(u);
+                                }}
+                                className="px-3 py-1.5 bg-[#007AAD]/10 hover:bg-[#007AAD]/20 text-[#007AAD] font-bold rounded-xl border border-[#007AAD]/20 transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                                title="Lihat Rincian Akun & Produk Seller"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Lihat Akun</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-8 py-4 bg-[#F9F9F8] border-t border-gray-light flex items-center justify-between shrink-0 text-xs">
+                <span className="text-gray font-medium">
+                  Menampilkan <strong className="text-base-dark">{filteredCampusUsers.length}</strong> dari {campusUsers.length} akun terdaftar di {viewingCampus.nama_kampus}
+                </span>
+
+                <button
+                  onClick={() => setIsCampusDetailModalOpen(false)}
+                  className="px-6 py-2.5 bg-base-dark hover:bg-black text-white font-bold rounded-2xl transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
