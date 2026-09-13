@@ -67,8 +67,17 @@ export default function AuthModal() {
 
       if (isLogin) {
         setUser(data.user);
-        setSuccessMsg('Berhasil masuk.');
-        setTimeout(() => closeAuthModal(), 1000);
+        const isAdmin = data.user?.role?.toUpperCase() === 'ADMIN';
+        if (isAdmin) {
+          setSuccessMsg('Berhasil masuk. Mengalihkan ke Dashboard Admin...');
+          setTimeout(() => {
+            closeAuthModal();
+            window.location.href = '/admin';
+          }, 600);
+        } else {
+          setSuccessMsg('Berhasil masuk.');
+          setTimeout(() => closeAuthModal(), 1000);
+        }
       } else {
         setSuccessMsg('Pendaftaran berhasil.');
         setTimeout(() => {
@@ -99,8 +108,17 @@ export default function AuthModal() {
       if (!res.ok) throw new Error(data.error || 'Gagal');
 
       setUser(data.user);
-      setSuccessMsg('Masuk...');
-      setTimeout(() => closeAuthModal(), 900);
+      const isAdmin = data.user?.role?.toUpperCase() === 'ADMIN';
+      if (isAdmin) {
+        setSuccessMsg('Masuk. Mengalihkan ke Dashboard Admin...');
+        setTimeout(() => {
+          closeAuthModal();
+          window.location.href = '/admin';
+        }, 500);
+      } else {
+        setSuccessMsg('Masuk...');
+        setTimeout(() => closeAuthModal(), 900);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

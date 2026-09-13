@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formatRupiah } from '@/lib/utils';
 import {
   Package,
@@ -161,7 +162,12 @@ export default function AdminProductsPage() {
   );
 
   return (
-    <div className="w-[95%] sm:w-[98%] max-w-[2560px] mx-auto py-10 space-y-8">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="w-[95%] sm:w-[98%] max-w-[2560px] mx-auto py-10 space-y-8"
+    >
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E6EAFA]">
@@ -278,146 +284,165 @@ export default function AdminProductsPage() {
       )}
 
       {/* Add / Edit Product Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1D2667]/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#E6EAFA] rounded-3xl p-6 md:p-8 max-w-xl w-full text-[#1F1F1F] relative shadow-2xl overflow-y-auto max-h-[90vh]">
-            
-            <button
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-[#1D2667]/60 backdrop-blur-sm"
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-2 text-[#5C6070] hover:text-[#1F1F1F] rounded-full hover:bg-[#F4F6FF]"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white border border-[#E6EAFA] rounded-3xl p-6 md:p-8 max-w-xl w-full text-[#1F1F1F] relative shadow-2xl overflow-y-auto max-h-[90vh] z-10"
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-xl font-bold text-[#1D2667] mb-6">
-              {editingId ? 'Edit Produk Katalog' : 'Tambah Produk Baru'}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-[#1D2667] font-semibold mb-1">Nama Produk</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Contoh: Sony WH-1000XM5 Wireless"
-                  className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[#1D2667] font-semibold mb-1">Kategori</label>
-                  <select
-                    value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[#1D2667] font-semibold mb-1">Jumlah Stok Initial</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[#1D2667] font-semibold mb-1">Harga Jual (Rp)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="4999000"
-                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#1D2667] font-semibold mb-1">Harga Asli / Coret (Rp)</label>
-                  <input
-                    type="number"
-                    value={formData.originalPrice}
-                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
-                    placeholder="5999000"
-                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[#1D2667] font-semibold mb-1">URL Gambar High-Res</label>
-                <input
-                  type="url"
-                  required
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[#1D2667] font-semibold mb-1">Deskripsi Spesifikasi Produk</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Jelaskan keunggulan dan spesifikasi barang..."
-                  className="w-full p-3 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
-                />
-              </div>
-
-              <div className="flex items-center gap-6 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-[#1D2667]">
-                  <input
-                    type="checkbox"
-                    checked={formData.isFeatured}
-                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    className="w-4 h-4 rounded text-[#4E75F8] border-[#E6EAFA]"
-                  />
-                  <span>Produk Unggulan</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-[#1D2667]">
-                  <input
-                    type="checkbox"
-                    checked={formData.isFlashSale}
-                    onChange={(e) => setFormData({ ...formData, isFlashSale: e.target.checked })}
-                    className="w-4 h-4 rounded text-rose-600 border-[#E6EAFA]"
-                  />
-                  <span>Pasang di Flash Sale</span>
-                </label>
-              </div>
-
               <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3 bg-[#4E75F8] hover:bg-[#3B62E6] text-white font-bold text-xs rounded-full shadow-md shadow-[#4E75F8]/30 transition mt-4"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 p-2 text-[#5C6070] hover:text-[#1F1F1F] rounded-full hover:bg-[#F4F6FF]"
               >
-                {submitting ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Tambah Produk Sekarang'}
+                <X className="w-5 h-5" />
               </button>
-            </form>
 
-          </div>
-        </div>
-      )}
+              <h3 className="text-xl font-bold text-[#1D2667] mb-6">
+                {editingId ? 'Edit Produk Katalog' : 'Tambah Produk Baru'}
+              </h3>
 
-    </div>
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-[#1D2667] font-semibold mb-1">Nama Produk</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Contoh: Sony WH-1000XM5 Wireless"
+                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#1D2667] font-semibold mb-1">Kategori</label>
+                    <select
+                      value={formData.categoryId}
+                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                    >
+                      <option value="">Pilih Kategori</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#1D2667] font-semibold mb-1">Stok Tersedia</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                      className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[#1D2667] font-semibold mb-1">Harga Jual (Rp)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="150000"
+                      className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#1D2667] font-semibold mb-1">Harga Coret/Awal (Rp)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.originalPrice}
+                      onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                      placeholder="200000"
+                      className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[#1D2667] font-semibold mb-1">URL Gambar Produk</label>
+                  <input
+                    type="url"
+                    required
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    placeholder="https://..."
+                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#1D2667] font-semibold mb-1">Deskripsi Lengkap</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Tuliskan spesifikasi dan kondisi barang..."
+                    className="w-full p-2.5 bg-[#F4F6FF] border border-[#E6EAFA] rounded-xl text-[#1F1F1F] focus:outline-none focus:border-[#4E75F8]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-6 pt-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isFeatured}
+                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#4E75F8] focus:ring-[#4E75F8]"
+                    />
+                    Produk Unggulan
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isFlashSale}
+                      onChange={(e) => setFormData({ ...formData, isFlashSale: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#4E75F8] focus:ring-[#4E75F8]"
+                    />
+                    Flash Sale
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3 bg-[#4E75F8] hover:bg-[#3B62E6] text-white font-bold text-xs rounded-full shadow-md shadow-[#4E75F8]/30 transition mt-4"
+                >
+                  {submitting ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Tambah Produk Sekarang'}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </motion.div>
   );
 }

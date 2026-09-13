@@ -271,7 +271,7 @@ function NavbarContent() {
                               <span>Pesanan Saya</span>
                             </Link>
 
-                            {user.role === 'admin' && (
+                            {user.role?.toUpperCase() === 'ADMIN' && (
                               <Link
                                 href="/admin"
                                 onClick={() => setIsDropdownOpen(false)}
@@ -628,6 +628,12 @@ function NavbarContent() {
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-40 w-full bg-white transition-all duration-300">
       <Suspense fallback={<div className="h-16 bg-white" />}>

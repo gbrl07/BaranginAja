@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { formatRupiah, formatDate, getOrderStatusBadge } from '@/lib/utils';
 import {
   ShoppingBag,
@@ -66,21 +67,20 @@ export default function AdminOrdersPage() {
     }));
   };
 
-  const handleSaveOrder = async (id: string) => {
+  const handleSave = async (id: string) => {
     setSavingId(id);
-    const targetData = editingMap[id];
-
+    const item = editingMap[id];
     try {
       const res = await fetch(`/api/orders/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(targetData),
+        body: JSON.stringify({
+          orderStatus: item.orderStatus,
+          trackingNumber: item.trackingNumber,
+        }),
       });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengupdate pesanan');
-
-      alert(data.message);
+      if (!res.ok) throw new Error(data.error || 'Gagal memperbarui pesanan');
       fetchOrders();
     } catch (err: any) {
       alert(err.message);
@@ -91,13 +91,18 @@ export default function AdminOrdersPage() {
 
   const filteredOrders = orders.filter(
     (o) =>
-      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+      o.id.toLowerCase().includes(search.toLowerCase()) ||
       o.customerName.toLowerCase().includes(search.toLowerCase()) ||
       o.customerEmail.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="w-[95%] sm:w-[98%] max-w-[2560px] mx-auto py-10 space-y-8">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="w-[95%] sm:w-[98%] max-w-[2560px] mx-auto py-10 space-y-8"
+    >
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E6EAFA]">
@@ -206,7 +211,7 @@ export default function AdminOrdersPage() {
 
                   <div className="md:col-span-3 pt-4 md:pt-0">
                     <button
-                      onClick={() => handleSaveOrder(ord.id)}
+                      onClick={() => handleSave(ord.id)}
                       disabled={savingId === ord.id}
                       className="w-full py-2.5 px-3 bg-[#4E75F8] hover:bg-[#3B62E6] text-white font-bold text-xs rounded-full shadow-md shadow-[#4E75F8]/30 flex items-center justify-center gap-1.5 transition"
                     >
@@ -228,6 +233,6 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-    </div>
+    </motion.div>
   );
 }

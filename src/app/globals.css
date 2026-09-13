@@ -3,34 +3,46 @@
 
 @theme {
   --font-sans: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
-  --color-primary: #0C1D32;
-  --color-primary-dark: #000000;
-  --color-primary-light: #F0F4F8;
-  --color-accent: #007AAD;
-  --color-accent-dark: #005C82;
-  --color-base-light: #F5F7FA;
-  --color-base-beige: #D9E2E9;
+  --color-primary: #0062FF;
+  --color-primary-dark: #004BCC;
+  --color-primary-light: #EFF6FF;
+  --color-accent: #0062FF;
+  --color-accent-dark: #004BCC;
+  --color-base-light: #F8FAFC;
+  --color-base-beige: #E2E8F0;
   --color-base-white: #FFFFFF;
-  --color-gray-light: #D9E2E9;
+  --color-gray-light: #E2E8F0;
   --color-gray: #64748B;
-  --color-gray-dark: #1E293B;
-  --color-base-dark: #0C1D32;
+  --color-gray-dark: #0F172A;
+  --color-base-dark: #0F172A;
 }
 
 @layer base {
-  body {
+  *, ::before, ::after {
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  html, body {
     background-color: var(--color-base-white);
     color: var(--color-base-dark);
     font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  }
+  input, button, select, textarea {
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  }
+  button, a {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
 @layer utilities {
   .shadow-premium {
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
   }
   .shadow-premium-hover {
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   }
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
@@ -45,6 +57,45 @@
   .navbar-top-black {
     background-color: #000000 !important;
     color: #ffffff !important;
+  }
+
+  /* Product UI Styleguide Component Utility Classes */
+  .styleguide-card {
+    background-color: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .styleguide-card:hover {
+    box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.06);
+    border-color: #CBD5E1;
+  }
+  .styleguide-btn-primary {
+    background-color: #0062FF;
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .styleguide-btn-primary:hover {
+    background-color: #004BCC;
+    box-shadow: 0 4px 12px rgba(0, 98, 255, 0.25);
+  }
+  .styleguide-input {
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 0.5rem 0.875rem;
+    color: #0F172A;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .styleguide-input:focus {
+    background-color: #ffffff;
+    border-color: #0062FF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15);
   }
   .btn-black-primary {
     background-color: #000000 !important;
