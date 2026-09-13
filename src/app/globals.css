@@ -2,7 +2,7 @@
 @import "leaflet/dist/leaflet.css";
 
 @theme {
-  --font-sans: var(--font-google-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
   --color-primary: #0C1D32;
   --color-primary-dark: #000000;
   --color-primary-light: #F0F4F8;
@@ -21,7 +21,7 @@
   body {
     background-color: var(--color-base-white);
     color: var(--color-base-dark);
-    font-family: var(--font-google-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -41,6 +41,17 @@
   }
   .font-cursive {
     font-family: var(--font-caveat), 'Caveat', cursive, sans-serif;
+  }
+  .navbar-top-black {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  .btn-black-primary {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  .btn-black-primary:hover {
+    background-color: #1f2937 !important;
   }
 }
 

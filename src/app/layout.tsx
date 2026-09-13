@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
-import { Google_Sans_Flex, Caveat } from 'next/font/google';
+import { Open_Sans, Caveat } from 'next/font/google';
 import './globals.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 
-const googleSansFlex = Google_Sans_Flex({
+const openSans = Open_Sans({
   subsets: ['latin'],
-  variable: '--font-google-sans',
+  variable: '--font-open-sans',
+  display: 'swap',
 });
 
 const caveat = Caveat({
@@ -27,14 +28,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${googleSansFlex.variable} ${caveat.variable}`}>
+    <html lang="id" className={`${openSans.variable} ${caveat.variable}`}>
+      <head>
+        <link 
+          rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" 
+        />
+      </head>
       <body className="bg-base-white text-base-dark font-sans min-h-screen flex flex-col antialiased">
         <Navbar />
         <main className="flex-1">{children}</main>
-        <Footer />
         <AuthModal />
       </body>
     </html>
   );
 }
+
 

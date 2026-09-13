@@ -9,41 +9,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SellProductModal from '@/components/SellProductModal';
 import MapLocationPickerModal, { LocationData } from '@/components/MapLocationPickerModal';
 
-import {
-  User,
-  ShieldCheck,
-  Package,
-  LogOut,
-  ChevronDown,
-  Menu,
-  X,
-  Store,
-  Leaf,
-  Search,
-  Building2,
-  CreditCard,
-  MapPin,
-  Phone,
-  Trash2
-} from 'lucide-react';
+// Font Awesome icons are used via CSS classes (fa-solid, fa-regular)
 
 function NavbarContent() {
   const router = useRouter();
   const pathname = usePathname();
-  const { 
-    user, 
-    fetchCurrentUser, 
-    logout, 
-    openAuthModal, 
-    isSellerModalOpen, 
-    openSellerModal, 
+  const {
+    user,
+    fetchCurrentUser,
+    logout,
+    openAuthModal,
+    isSellerModalOpen,
     closeSellerModal,
     handleStartSelling
   } = useAuthStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
   const [clearingDb, setClearingDb] = useState(false);
@@ -68,9 +51,6 @@ function NavbarContent() {
     }
   };
 
-  // Modals state
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -90,12 +70,6 @@ function NavbarContent() {
 
   useEffect(() => {
     fetchCurrentUser();
-    
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
   }, [fetchCurrentUser]);
 
   // Sync initial seller form from user data
@@ -113,16 +87,14 @@ function NavbarContent() {
     }
   }, [user]);
 
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
     } else {
       router.push('/products');
+      setIsSearchOpen(false);
     }
   };
 
@@ -151,304 +123,407 @@ function NavbarContent() {
   };
 
   return (
-    <div className="w-[95%] sm:w-[98%] max-w-[2560px] mx-auto">
-      <div className="flex items-center justify-between h-20 gap-4 lg:gap-8">
-        
-        {/* Brand Logo - Left */}
-        <Link href="/" className="flex items-center gap-3 shrink-0 group">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary transition-transform group-hover:rotate-12">
-            <Leaf className="w-7 h-7 fill-primary" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-black text-base-dark tracking-widest uppercase">
-              Barangin
-            </span>
-            <span className="text-[9px] font-bold text-gray tracking-[0.2em] uppercase leading-none">
-              Move Ahead
-            </span>
-          </div>
-        </Link>
+    <div className="w-full bg-white">
+      <div className="w-full bg-white">
+        {/* =========================================================================
+          ROW 1: GOOGLE FONTS HEADER (LOGO + PILL TABS + CART 1 & PROFILE)
+          ========================================================================= */}
+        <div className="w-full bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
 
-        {/* Navigation Links - Positioned Right next to Search Bar */}
-        <nav className="hidden lg:flex flex-1 justify-end items-center gap-6 lg:gap-8 mr-2 text-[11px] font-bold text-base-dark tracking-wide uppercase">
-          <Link href="/products" className="hover:text-primary transition-colors">
-            Katalog
-          </Link>
-          <Link href="/about" className="hover:text-primary transition-colors">
-            Tentang Kami
-          </Link>
-          {user && (
-            <Link href="/orders" className="hover:text-primary transition-colors">
-              Pesanan
-            </Link>
-          )}
-
-          {user && user.is_seller && (
-            <Link 
-              href="/profile?tab=seller" 
-              className="hover:text-[#007AAD] text-[#007AAD] transition-colors flex items-center gap-1.5 font-extrabold"
-            >
-              <Store className="w-3.5 h-3.5" />
-              <span>Dashboard</span>
-            </Link>
-          )}
-        </nav>
-
-        {/* Right Section: Search Bar & Account Menu */}
-        <div className="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
-          
-          {/* Quick Database Clear Button */}
-          <button
-            suppressHydrationWarning
-            type="button"
-            onClick={handleClearDatabase}
-            disabled={clearingDb}
-            title="Kosongkan Tabel Database (Reset)"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 disabled:opacity-50"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-            <span>{clearingDb ? 'Clearing...' : 'Kosongkan DB'}</span>
-          </button>
-
-          {/* Search Bar - Right Side near Account */}
-          <div className="hidden sm:flex items-center w-48 md:w-56 lg:w-64">
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray pointer-events-none" />
-              <input 
-                suppressHydrationWarning
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari barang kos..."
-                className="w-full bg-[#F5F5F3] hover:bg-[#EFEFEA] focus:bg-white rounded-full pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-base-dark placeholder-gray transition-all border border-transparent focus:border-primary/20"
-              />
-            </form>
-          </div>
-          
-          {user ? (
-            <div className="relative">
-              <button
-                suppressHydrationWarning
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2.5 p-1.5 pl-3.5 border border-primary bg-primary hover:bg-primary-dark text-white rounded-full transition-all text-xs font-bold shadow-sm"
-              >
-                <span className="hidden sm:inline-block max-w-[90px] truncate">{user.nama_lengkap}</span>
-                <div className="w-8 h-8 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-sm">
-                  <User className="w-4 h-4" />
-                </div>
-              </button>
-
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div 
-                    key="user-dropdown-menu"
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-3 w-64 bg-base-white border border-gray-light rounded-2xl shadow-premium p-2 z-50 text-xs text-base-dark"
-                  >
-                    <div className="p-3 bg-primary/10 rounded-xl mb-1">
-                      <p className="font-bold text-base-dark truncate">{user.nama_lengkap}</p>
-                      <p className="text-[11px] text-gray truncate mt-0.5">{user.email}</p>
-                    </div>
-
-                    <div className="py-1">
-                      {user.role === 'ADMIN' ? (
-                        <>
-                          <Link
-                            href="/admin"
-                            onClick={() => setIsDropdownOpen(false)}
-                            className="flex items-center gap-2.5 p-2.5 hover:bg-base-light text-base-dark font-bold rounded-xl transition-colors"
-                          >
-                            <ShieldCheck className="w-4 h-4 text-primary" />
-                            <span>Dashboard Admin</span>
-                          </Link>
-
-                          <button
-                            onClick={() => {
-                              setIsDropdownOpen(false);
-                              logout();
-                            }}
-                            className="w-full flex items-center gap-2.5 p-2.5 hover:bg-red-50 text-red-600 rounded-xl transition-colors font-bold text-left mt-1 border-t border-gray-light cursor-pointer"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Keluar (Logout)</span>
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Link
-                            href="/profile"
-                            onClick={() => setIsDropdownOpen(false)}
-                            className="flex items-center gap-2.5 p-2.5 hover:bg-base-light text-base-dark font-bold rounded-xl transition-colors text-left cursor-pointer"
-                          >
-                            <User className="w-4 h-4 text-primary" />
-                            <span>Profil Saya</span>
-                          </Link>
-
-                          <button
-                            onClick={() => {
-                              setIsDropdownOpen(false);
-                              logout();
-                            }}
-                            className="w-full flex items-center gap-2.5 p-2.5 hover:bg-red-50 text-red-600 rounded-xl transition-colors font-bold text-left mt-1 border-t border-gray-light cursor-pointer"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Keluar (Logout)</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* 1. KIRI: BRAND LOGO */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/" className="flex items-center group">
+                <span className="text-[21px] font-normal text-[#1f1f1f] tracking-tight hover:opacity-85 transition-opacity">
+                  BaranginAja
+                </span>
+              </Link>
             </div>
-          ) : (
-            <motion.button
-              suppressHydrationWarning
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => openAuthModal('login')}
-              className="px-6 py-2.5 border border-primary bg-primary hover:bg-primary-dark text-white font-bold text-[11px] tracking-wide uppercase rounded-full transition-all flex items-center gap-2 shadow-sm"
-            >
-              <User className="w-4 h-4 text-white" />
-              <span>Masuk</span>
-            </motion.button>
-          )}
 
-          {/* Mobile Menu Toggle */}
-          <button
-            suppressHydrationWarning
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-base-dark bg-base-light rounded-full"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="lg:hidden overflow-hidden"
-          >
-            <div className="py-4 border-t border-gray-light flex flex-col gap-3">
-              <form onSubmit={handleSearchSubmit} className="relative w-full px-2">
-                <Search className="w-4 h-4 absolute left-6 top-1/2 -translate-y-1/2 text-gray pointer-events-none" />
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari barang kos..."
-                  className="w-full bg-[#F5F5F3] rounded-full pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-base-dark placeholder-gray"
-                />
-              </form>
-
-              <div className="flex flex-col gap-1 text-[11px] font-bold text-base-dark tracking-wide uppercase">
-                <Link href="/products" onClick={() => setIsMobileMenuOpen(false)} className="p-4 hover:bg-base-light rounded-xl transition-colors">
-                  Katalog
-                </Link>
-                <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className="p-4 hover:bg-base-light rounded-xl transition-colors">
-                  Tentang Kami
-                </Link>
-                {user && (
-                  <Link href="/orders" onClick={() => setIsMobileMenuOpen(false)} className="p-4 hover:bg-base-light rounded-xl transition-colors">
-                    Pesanan Saya
-                  </Link>
-                )}
-                {user && user.is_seller && (
-                  <Link href="/profile?tab=seller" onClick={() => setIsMobileMenuOpen(false)} className="p-4 hover:bg-base-light rounded-xl transition-colors text-[#007AAD] flex items-center gap-2 font-extrabold">
-                    <Store className="w-4 h-4" />
-                    <span>Dashboard Penjualan</span>
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleClearDatabase();
-                  }}
-                  className="p-4 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left font-extrabold flex items-center gap-2 cursor-pointer"
+            {/* 2. TENGAH: PILL TAB NAVIGATION */}
+            <div className="hidden md:flex items-center justify-center flex-1 mx-2 sm:mx-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[16px]">
+                {/* Beranda */}
+                <Link
+                  href="/"
+                  className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 text-[16px] ${
+                    pathname === '/'
+                      ? 'font-semibold text-[#1f1f1f]'
+                      : 'font-normal text-[#5f6368] hover:text-[#1f1f1f]'
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Kosongkan DB (Reset)</span>
-                </button>
+                  <span>Beranda</span>
+                </Link>
+
+                {/* Katalog */}
+                <Link
+                  href="/products"
+                  className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 text-[16px] ${
+                    pathname.startsWith('/products')
+                      ? 'font-semibold text-[#1f1f1f]'
+                      : 'font-normal text-[#5f6368] hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <span>Katalog</span>
+                </Link>
+
+                {/* Tentang Kami */}
+                <Link
+                  href="/about"
+                  className={`px-3.5 py-1.5 rounded-full transition-all shrink-0 text-[16px] ${
+                    pathname === '/about'
+                      ? 'font-semibold text-[#1f1f1f]'
+                      : 'font-normal text-[#5f6368] hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <span>Tentang Kami</span>
+                </Link>
+
+                {/* Bantuan */}
+                <a
+                  href="https://wa.me/6281234567890?text=Halo%20BaranginAja%20Support"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 rounded-full font-normal text-[16px] text-[#5f6368] hover:text-[#1f1f1f] transition-all shrink-0"
+                >
+                  <span>Bantuan</span>
+                </a>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Seller Registration Modal */}
+            {/* 3. KANAN: SEARCH & PROFIL (HANYA ICON) */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Search Button (Hanya Icon) */}
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                title="Cari Produk"
+                className="p-2 text-[#444746] hover:text-[#1f1f1f] transition-colors flex items-center justify-center cursor-pointer border-none outline-none focus:outline-none"
+              >
+                <i className="fa-solid fa-magnifying-glass text-[18px]" />
+              </button>
+
+              {/* Profile Dropdown (Hanya Icon) */}
+              {user ? (
+                <div className="relative flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    title={user.nama_lengkap || 'Profil Akun'}
+                    className="p-2 text-[#444746] hover:text-[#1f1f1f] transition-colors flex items-center justify-center cursor-pointer border-none outline-none focus:outline-none relative"
+                  >
+                    <i className="fa-regular fa-circle-user text-[22px]" />
+                  </button>
+
+                  <AnimatePresence>
+                    {isDropdownOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsDropdownOpen(false)}
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
+                        >
+                          <div className="px-4 py-2.5 border-b border-slate-100">
+                            <p className="text-[11px] text-slate-400 font-medium">Masuk sebagai</p>
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {user.nama_lengkap || 'Pengguna'}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                          </div>
+
+                          <div className="py-1">
+                            <Link
+                              href="/profile"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-black transition-colors"
+                            >
+                              <i className="fa-regular fa-user text-slate-500 w-4 text-center text-xs" />
+                              <span>Profil Saya</span>
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsDropdownOpen(false);
+                                handleStartSelling(router);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-black transition-colors text-left cursor-pointer"
+                            >
+                              <i className="fa-solid fa-store text-slate-500 w-4 text-center text-xs" />
+                              <span>{user.is_seller ? 'Kelola Toko' : 'Mulai Berjualan'}</span>
+                            </button>
+
+                            <Link
+                              href="/orders"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-black transition-colors"
+                            >
+                              <i className="fa-solid fa-box-open text-slate-500 w-4 text-center text-xs" />
+                              <span>Pesanan Saya</span>
+                            </Link>
+
+                            {user.role === 'admin' && (
+                              <Link
+                                href="/admin"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="flex items-center gap-2.5 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 transition-colors font-medium"
+                              >
+                                <i className="fa-solid fa-shield-halved text-amber-600 w-4 text-center text-xs" />
+                                <span>Dashboard Admin</span>
+                              </Link>
+                            )}
+                          </div>
+
+                          <div className="border-t border-slate-100 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsDropdownOpen(false);
+                                logout();
+                              }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer font-medium"
+                            >
+                              <i className="fa-solid fa-arrow-right-from-bracket text-red-600 w-4 text-center text-xs" />
+                              <span>Keluar</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  title="Masuk / Daftar"
+                  className="p-2 text-[#444746] hover:text-[#1f1f1f] transition-colors flex items-center justify-center cursor-pointer border-none outline-none focus:outline-none"
+                >
+                  <i className="fa-regular fa-circle-user text-[22px]" />
+                </button>
+              )}
+
+              {/* Mobile Menu Button */}
+              <button
+                suppressHydrationWarning
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-2 text-[#444746] hover:text-[#1f1f1f] transition-colors cursor-pointer flex items-center justify-center border-none outline-none focus:outline-none"
+                aria-label="Menu"
+              >
+                {isMobileMenuOpen ? (
+                  <i className="fa-solid fa-xmark text-[19px]" />
+                ) : (
+                  <i className="fa-solid fa-bars text-[19px]" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden border-t border-slate-200 overflow-hidden bg-white px-4 py-4"
+              style={{ fontSize: '14px' }}
+            >
+              <div className="flex flex-col gap-1 font-medium text-slate-800" style={{ fontSize: '14px', fontWeight: 500 }}>
+                <Link
+                  href="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`p-3 rounded-xl transition-colors text-[16px] ${
+                    pathname === '/' ? 'font-semibold text-black bg-slate-100' : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span>Beranda</span>
+                </Link>
+                <Link
+                  href="/products"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`p-3 rounded-xl transition-colors text-[16px] ${
+                    pathname.startsWith('/products') ? 'font-semibold text-black bg-slate-100' : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span>Katalog</span>
+                </Link>
+                <Link
+                  href="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`p-3 rounded-xl transition-colors text-[16px] ${
+                    pathname === '/about' ? 'font-semibold text-black bg-slate-100' : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span>Tentang Kami</span>
+                </Link>
+                <a
+                  href="https://wa.me/6281234567890?text=Halo%20BaranginAja%20Support"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-3 hover:bg-slate-50 rounded-xl transition-colors text-[16px] text-slate-600"
+                >
+                  <span>Bantuan</span>
+                </a>
+
+                <div className="border-t border-slate-100 my-2 pt-2">
+                  {user ? (
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="p-3 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-2 font-medium text-black"
+                    >
+                      <i className="fa-regular fa-user text-xs w-4 text-center" />
+                      <span>{user.nama_lengkap || 'My Account'}</span>
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openAuthModal('login');
+                      }}
+                      className="w-full p-3 hover:bg-slate-100 rounded-xl transition-colors text-left cursor-pointer font-medium flex items-center gap-2 text-black"
+                    >
+                      <i className="fa-regular fa-user text-xs w-4 text-center" />
+                      <span>Login / Register</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quick Search Modal */}
+        <AnimatePresence>
+          {isSearchOpen && (
+            <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSearchOpen(false)}
+                className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs cursor-pointer"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-10"
+              >
+                <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+                  <i className="fa-solid fa-magnifying-glass text-slate-400 ml-3 text-[15px]" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari barang bekas, kos, elektronik..."
+                    className="flex-1 bg-transparent border-none outline-none text-slate-800 placeholder-slate-400 text-[14px] py-2"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+                    >
+                      <i className="fa-solid fa-xmark text-xs" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="bg-black hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Cari
+                  </button>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* =========================================================================
+          Modals (Seller Registration & Map Picker)
+         ========================================================================= */}
       {mounted && createPortal(
         <AnimatePresence>
           {isSellerModalOpen && (
-            <motion.div 
+            <motion.div
               key="seller-registration-modal-dialog-container"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
             >
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={closeSellerModal}
-                className="fixed inset-0 bg-[#0C1D32]/60 backdrop-blur-md cursor-pointer"
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-md cursor-pointer"
               />
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-base-white border border-gray-light rounded-2xl p-6 sm:p-8 max-w-lg w-full text-base-dark relative shadow-2xl space-y-6 max-h-[85vh] overflow-y-auto z-10 my-auto custom-scrollbar"
+                className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-lg w-full text-slate-800 relative shadow-2xl space-y-6 max-h-[85vh] overflow-y-auto z-10 my-auto custom-scrollbar"
               >
                 <button
                   onClick={closeSellerModal}
-                  className="absolute top-6 right-6 p-2 text-gray hover:text-base-dark rounded-full hover:bg-base-light cursor-pointer"
+                  className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-800 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center"
                 >
-                  <X className="w-5 h-5" />
+                  <i className="fa-solid fa-xmark text-lg" />
                 </button>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[#0C1D32] text-white font-bold flex items-center justify-center shrink-0">
-                    <Store className="w-6 h-6" />
+                  <div
+                    className="w-12 h-12 rounded-xl text-emerald-400 font-bold flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: '#000000' }}
+                  >
+                    <i className="fa-solid fa-store text-xl" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-base-dark">Pendaftaran Penjual BaranginAja</h3>
-                    <p className="text-xs text-gray">Lengkapi informasi titik penjemputan &amp; rekening pencairan dana.</p>
+                    <h3 className="text-lg font-black text-slate-900">Pendaftaran Penjual BaranginAja</h3>
+                    <p className="text-slate-500" style={{ fontSize: '14px' }}>Lengkapi informasi penjemputan &amp; rekening pencairan dana.</p>
                   </div>
                 </div>
 
-                <form onSubmit={handleRegisterSeller} className="space-y-4 text-xs">
+                <form onSubmit={handleRegisterSeller} className="space-y-4" style={{ fontSize: '14px' }}>
                   <div>
-                    <label className="block font-bold text-base-dark mb-1 uppercase tracking-wide text-[10px]">No. WhatsApp / HP Penjual</label>
+                    <label className="block font-bold text-slate-800 mb-1 tracking-wide" style={{ fontSize: '14px' }}>No. WhatsApp / HP Penjual</label>
                     <input
                       type="text"
                       required
                       value={sellerForm.no_hp}
                       onChange={(e) => setSellerForm({ ...sellerForm, no_hp: e.target.value })}
                       placeholder="Contoh: 081234567890"
-                      className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-[#0C1D32]"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      style={{ fontSize: '14px' }}
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block font-bold text-base-dark uppercase tracking-wide text-[10px]">Alamat Kos Lengkap (Titik Penjemputan Kurir)</label>
+                      <label className="block font-bold text-slate-800 tracking-wide" style={{ fontSize: '14px' }}>Alamat Kos Lengkap (Titik Penjemputan)</label>
                       <button
                         type="button"
                         onClick={() => setIsSellerMapOpen(true)}
-                        className="px-2.5 py-1 bg-[#007AAD] hover:bg-[#005C82] text-white text-[10px] font-extrabold rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                        className="px-3 py-1 text-white font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        style={{ backgroundColor: '#047857', fontSize: '14px' }}
                       >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>Maps</span>
+                        <i className="fa-solid fa-location-dot text-sm" />
+                        <span>Pilih di Peta</span>
                       </button>
                     </div>
                     <textarea
@@ -457,17 +532,19 @@ function NavbarContent() {
                       value={sellerForm.alamat_kos}
                       onChange={(e) => setSellerForm({ ...sellerForm, alamat_kos: e.target.value })}
                       placeholder="Contoh: Jl. Keputih Tegal Timur No. 12, Sukolilo, Surabaya"
-                      className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-[#0C1D32]"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      style={{ fontSize: '14px' }}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-base-dark mb-1 uppercase tracking-wide text-[10px]">Nama Bank / E-Wallet</label>
+                      <label className="block font-bold text-slate-800 mb-1 tracking-wide" style={{ fontSize: '14px' }}>Nama Bank / E-Wallet</label>
                       <select
                         value={sellerForm.nama_bank}
                         onChange={(e) => setSellerForm({ ...sellerForm, nama_bank: e.target.value })}
-                        className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-[#0C1D32] font-bold"
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold"
+                        style={{ fontSize: '14px' }}
                       >
                         <option value="SEABANK">SEABANK</option>
                         <option value="BCA">BCA</option>
@@ -480,27 +557,29 @@ function NavbarContent() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-base-dark mb-1 uppercase tracking-wide text-[10px]">Nomor Rekening / HP</label>
+                      <label className="block font-bold text-slate-800 mb-1 tracking-wide" style={{ fontSize: '14px' }}>Nomor Rekening / HP</label>
                       <input
                         type="text"
                         required
                         value={sellerForm.no_rekening}
                         onChange={(e) => setSellerForm({ ...sellerForm, no_rekening: e.target.value })}
                         placeholder="Contoh: 1234567890"
-                        className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-[#0C1D32] font-mono font-bold"
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono font-bold"
+                        style={{ fontSize: '14px' }}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-base-dark mb-1 uppercase tracking-wide text-[10px]">Nama Pemilik Rekening</label>
+                    <label className="block font-bold text-slate-800 mb-1 tracking-wide" style={{ fontSize: '14px' }}>Nama Pemilik Rekening</label>
                     <input
                       type="text"
                       required
                       value={sellerForm.nama_pemilik_rekening}
                       onChange={(e) => setSellerForm({ ...sellerForm, nama_pemilik_rekening: e.target.value })}
-                      placeholder="Nama sesuai di buku tabungan / rekening"
-                      className="w-full p-3 bg-[#F5F5F3] border border-gray-light rounded-xl text-base-dark focus:outline-none focus:ring-1 focus:ring-[#0C1D32] font-bold"
+                      placeholder="Nama sesuai di rekening"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 font-bold"
+                      style={{ fontSize: '14px' }}
                     />
                   </div>
 
@@ -508,7 +587,8 @@ function NavbarContent() {
                     <button
                       type="submit"
                       disabled={submittingSeller}
-                      className="w-full py-3.5 bg-[#0C1D32] hover:bg-[#007AAD] text-white font-bold rounded-full text-xs shadow-sm transition cursor-pointer"
+                      className="w-full py-3.5 text-white font-bold rounded-full shadow-sm transition cursor-pointer"
+                      style={{ backgroundColor: '#000000', fontSize: '14px' }}
                     >
                       {submittingSeller ? 'Memproses Pendaftaran...' : 'Daftar Jadi Penjual Sekarang'}
                     </button>
@@ -546,8 +626,8 @@ function NavbarContent() {
 
 export default function Navbar() {
   return (
-    <header className="sticky top-0 z-40 bg-base-white/90 backdrop-blur-md transition-all duration-300">
-      <Suspense fallback={<div className="h-20 bg-base-white" />}>
+    <header className="sticky top-0 z-40 w-full bg-white transition-all duration-300">
+      <Suspense fallback={<div className="h-16 bg-white" />}>
         <NavbarContent />
       </Suspense>
     </header>
