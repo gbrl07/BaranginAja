@@ -18,9 +18,6 @@ export default function AuditTab({ activities }: AuditTabProps) {
         <h2 className="text-sm font-black text-[#0F172A] uppercase tracking-wider mb-1">
           Audit Trail Aktivitas Admin
         </h2>
-        <p className="text-xs text-[#64748B]">
-          Sesuai PRD 8.9 &amp; 14: Seluruh tindakan admin terkait verifikasi bayar, pencairan dana, dan pengubahan data tercatat secara permanen.
-        </p>
       </div>
 
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm">

@@ -265,8 +265,8 @@ fee_platform = harga_jual_tampil − harga_input_penjual
 
 **Formula:**
 ```
-ongkir_raw = (jarak_km × Rp 2.500) + (berat_kg × Rp 500)
-ongkir_final = round_up(ongkir_raw ke kelipatan terdekat Rp 500)   [Rekomendasi PM — agar nominal rapi]
+ongkir_raw = (jarak_km × Rp 2.500) + (berat_kg × Rp 5000)
+ongkir_final = round_up(ongkir_raw ke kelipatan terdekat Rp 5000)   
 ```
 
 **Contoh:** jarak 3,2 km, berat barang 2,5 kg
@@ -487,7 +487,7 @@ Admin Dashboard disarankan dibangun sebagai route terproteksi (`/admin`) dalam a
 **Fase 1 — MVP** (sesuai seluruh kebutuhan di dokumen ini):
 Registrasi + verifikasi dropdown kampus, posting barang + kalkulasi markup otomatis, katalog & pencarian, checkout via WA handoff, pembayaran manual + verifikasi admin, 2 opsi pengiriman dengan kalkulasi ongkir otomatis, dashboard seller, dashboard admin/finance dasar.
 
-**Fase 2 — Pengembangan Lanjutan:**
+**Fase 2 — Pengembangan Lanjutan dan belum masuk ke development sekarang:**
 - Rating & ulasan penjual/pembeli
 - Notifikasi otomatis (WhatsApp Business API / email)
 - Verifikasi identitas dengan upload KTM

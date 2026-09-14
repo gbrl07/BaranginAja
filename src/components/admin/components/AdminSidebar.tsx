@@ -76,132 +76,139 @@ export default function AdminSidebar({
         </span>
       </div>
 
-      {/* System Region / Status Info */}
-      <div className="px-6 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between text-[11px]">
-        <span className="text-[#64748B] flex items-center gap-2 font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#0062FF] animate-pulse"></span>
-          Ops Surabaya
-        </span>
-        <span className="text-[#0F172A] font-bold font-mono">SeaBank QRIS</span>
-      </div>
-
       {/* Main SIM Modules Navigation List */}
-      <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-        <p className="px-3 text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-3">
-          Modul Manajemen
-        </p>
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {/* Modul Utama */}
+        <div className="mb-4">
+          <p className="px-3 text-[10px] font-extrabold text-[#94A3B8] uppercase tracking-widest mb-2">
+            Modul Utama
+          </p>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Summary</span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+          </button>
+        </div>
 
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'overview'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Ringkasan Executive</span>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-        </button>
+        {/* Modul Transaksi */}
+        <div className="pt-3 mt-3 border-t border-[#E2E8F0]/70 mb-4 space-y-1">
+          <p className="px-3 text-[10px] font-extrabold text-[#94A3B8] uppercase tracking-widest mb-2">
+            Modul Transaksi
+          </p>
 
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'orders'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <ShoppingBag className="w-4 h-4" />
-            <span>Order &amp; Resi WA</span>
-          </div>
-          {stats.pendingOrders > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
-              {stats.pendingOrders}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'orders'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Order</span>
+            </div>
+            {stats.pendingOrders > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                {stats.pendingOrders}
+              </span>
+            )}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('payouts')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'payouts'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <CreditCard className="w-4 h-4" />
-            <span>Pencairan Payout</span>
-          </div>
-          {pendingPayoutCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]">
-              {pendingPayoutCount}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setActiveTab('payouts')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'payouts'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-4 h-4" />
+              <span>Payout</span>
+            </div>
+            {pendingPayoutCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]">
+                {pendingPayoutCount}
+              </span>
+            )}
+          </button>
+        </div>
 
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'products'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Package className="w-4 h-4" />
-            <span>Katalog &amp; Markup</span>
-          </div>
-          <span className="text-[10px] font-bold text-[#64748B]">{stats.totalProducts}</span>
-        </button>
+        {/* Modul Manajemen */}
+        <div className="pt-3 mt-3 border-t border-[#E2E8F0]/70 space-y-1">
+          <p className="px-3 text-[10px] font-extrabold text-[#94A3B8] uppercase tracking-widest mb-2">
+            Modul Manajemen
+          </p>
 
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'users'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Users className="w-4 h-4" />
-            <span>User &amp; Verifikasi Seller</span>
-          </div>
-          <span className="text-[10px] font-bold text-[#64748B]">{usersCount}</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'products'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Package className="w-4 h-4" />
+              <span>Manajemen Katalog</span>
+            </div>
+            <span className="text-[10px] font-bold text-[#64748B]">{stats.totalProducts}</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('campuses')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'campuses'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Building2 className="w-4 h-4" />
-            <span>Jaringan Kampus</span>
-          </div>
-          <span className="text-[10px] font-bold text-[#64748B]">{campusesCount}</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'users'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Users className="w-4 h-4" />
+              <span>Manajemen User</span>
+            </div>
+            <span className="text-[10px] font-bold text-[#64748B]">{usersCount}</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'audit'
-              ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
-              : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <FileText className="w-4 h-4" />
-            <span>Audit Trail System</span>
-          </div>
-        </button>
+          <button
+            onClick={() => setActiveTab('campuses')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'campuses'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Building2 className="w-4 h-4" />
+              <span>Manajemen Kampus</span>
+            </div>
+            <span className="text-[10px] font-bold text-[#64748B]">{campusesCount}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'audit'
+                ? 'bg-[#0F172A] text-white shadow-sm shadow-[#0F172A]/10'
+                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <FileText className="w-4 h-4" />
+              <span>Audit Trail</span>
+            </div>
+          </button>
+        </div>
       </nav>
 
       {/* Admin User Footer Profile with Popover Menu */}
